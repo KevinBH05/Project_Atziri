@@ -1,19 +1,75 @@
-# AI Gaming Copilot configuration
+# =====================================================================
+# ZIRI — AI Gaming Copilot Configuration
+# =====================================================================
+
 project:
-  name: "AI Gaming Copilot"
-  version: "0.1.0"
+  name: "Ziri"
+  version: "0.1.0-dev"
+  environment: "development"
 
-llm:
-  provider: "openai"
-  model: "gpt-4o-mini"
-  temperature: 0.2
+# ---------------------------------------------------------------------
+# Configuración del Juego Activo & Adaptadores
+# ---------------------------------------------------------------------
+game:
+  active_adapter: "poe2"  # Opciones: poe2, diablo4, etc.
+  window_title_keywords:
+    - "Path of Exile 2"
+    - "PathofExile"
+  capture_fps: 0.5  # Polling pasivo: 1 captura cada 2 segundos
 
-rag:
-  chunk_size: 800
-  chunk_overlap: 120
-
+# ---------------------------------------------------------------------
+# Motor de Visión Artificial y OCR
+# ---------------------------------------------------------------------
 vision:
-  capture_interval_seconds: 2
+  ocr_engine: "tesseract"  # Opciones: tesseract, easyocr
+  tesseract_cmd_path: ""   # Dejar vacío si está en el PATH del SO
+  preprocessing:
+    grayscale: true
+    thresholding: true
+    scale_factor: 2.0
 
+# ---------------------------------------------------------------------
+# Integración con Terceros (Path of Building)
+# ---------------------------------------------------------------------
+integrations:
+  pob:
+    enabled: true
+    default_build_path: ""  # Ruta local a archivo .xml si se requiere
+    auto_sync: false
+
+# ---------------------------------------------------------------------
+# Ingesta & Motor RAG (LlamaIndex)
+# ---------------------------------------------------------------------
+rag:
+  vector_store: "chroma"  # Opciones: chroma, faiss
+  chroma_persist_dir: "./data/vector_store/chroma"
+  chunk_size: 512
+  chunk_overlap: 50
+  top_k_results: 3
+  ingestors:
+    poedb:
+      enabled: true
+      update_interval_hours: 24
+    maxroll:
+      enabled: true
+
+# ---------------------------------------------------------------------
+# Proveedor de Inteligencia Artificial (LLM)
+# ---------------------------------------------------------------------
+llm:
+  provider: "gemini"  # Opciones: gemini, openai, local
+  model_name: "gemini-2.5-flash"
+  temperature: 0.2
+  max_tokens: 500
+  system_prompt_template: "default_gaming"
+
+# ---------------------------------------------------------------------
+# Interfaz de Usuario / Overlay Flotante
+# ---------------------------------------------------------------------
 ui:
-  overlay_enabled: true
+  framework: "pyqt6"
+  always_on_top: true
+  opacity: 0.90
+  hotkeys:
+    trigger_capture: "ctrl+space"
+    toggle_overlay: "ctrl+shift+z"
