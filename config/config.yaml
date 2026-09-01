@@ -1,0 +1,19 @@
+# AI Gaming Copilot configuration
+project:
+  name: "AI Gaming Copilot"
+  version: "0.1.0"
+
+llm:
+  provider: "openai"
+  model: "gpt-4o-mini"
+  temperature: 0.2
+
+rag:
+  chunk_size: 800
+  chunk_overlap: 120
+
+vision:
+  capture_interval_seconds: 2
+
+ui:
+  overlay_enabled: true

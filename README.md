@@ -26,40 +26,50 @@ El proyecto prioriza la seguridad de la cuenta por encima de todo:
 
 ## 🏗️ Arquitectura del Sistema
 
-## 🏗️ Arquitectura del Sistema
-
 ```text
-+---------------------+
-|  Cliente de PoE 2   |
-+---------------------+
-           |
-           | (Captura de pantalla externa)
-           v
-+---------------------+
-|  Módulo Vision/OCR  |
-+---------------------+
-           |
-           | (Extracción de stats / texto)
-           v
-+---------------------+       +------------------------+
-| Extractor Contexto  | ----> | Engine RAG (LlamaIndex)| <--- [ Base de Conocimiento ]
-+---------------------+       +------------------------+      (Wikis, Guides, PoE Ninja)
-                                           |
-                                           v
-                              +------------------------+
-                              |   LLM (GPT / Gemini)   |
-                              +------------------------+
-                                           |
-                                           v
-                              +------------------------+
-                              |      Overlay GUI       |
-                              +------------------------+
++------------------------------------+
+|   Cliente PoE 2 / Juego Target     |
++------------------------------------+
+                  |
+                  | (Captura de pantalla externa pasiva)
+                  v
++------------------------------------+
+|  Game Adapter (PoE2 / Multi-game)  |
++------------------------------------+
+                  |
+                  v
++------------------------------------+
+|        Módulo Vision / OCR         |
++------------------------------------+
+                  |
+                  | (Stats & Texto de Ítems)
+                  v
++------------------------------------+       +------------------------------------+
+|       Extractor de Contexto        | <---> | Path of Building (PoB Integration)  |
++------------------------------------+       +------------------------------------+
+                  |                                  (XML / Base64 / Zlib)
+                  v
++------------------------------------+       +------------------------------------+
+|      Engine RAG (LlamaIndex)       | <---  |     Data Ingestors Extensibles     |
++------------------------------------+       +------------------------------------+
+                  |                             (Wikis, PoE Ninja, Community Docs)
+                  v
++------------------------------------+
+|        LLM (GPT / Gemini)          |
++------------------------------------+
+                  |
+                  v
++------------------------------------+
+|            Overlay GUI             |
++------------------------------------+
 ```
 ---
 
 ## 🛠️ Tech Stack
 
 * **Core & Backend:** Python 3.10+
+* **Arquitectura de Adaptadores:** Diseñado con patrones Factoría/Adaptador para añadir nuevos juegos o fuentes sin reestructurar el motor.
+* **Integración de Terceros:** Parser integrado para Path of Building (PoB XML/Base64 + Zlib) para análisis dinámico de DPS y defensas.
 * **Visión Artificial & OCR:** OpenCV, Tesseract OCR *(YOLO en fases avanzadas)*
 * **Orquestación RAG:** LlamaIndex
 * **Vector DB:** ChromaDB / FAISS
