@@ -26,11 +26,60 @@ El proyecto prioriza la seguridad de la cuenta por encima de todo:
 
 ## 🏗️ Arquitectura del Sistema
 
-```mermaid
-graph TD
-    A[🎮 Cliente de PoE 2] -->|Captura de Pantalla| B[📸 Módulo Vision / OCR]
-    B -->|Extracción de Contexto / Stats| C[🧠 Extractor de Contexto]
-    C -->|Query Enriquecida| D[🔍 Engine RAG / LlamaIndex]
-    E[(📚 Base de Conocimiento\nWikis, Guides, PoE Ninja)] -->|Context Retrieval| D
-    D -->|Prompt + Contexto| F[🤖 LLM Provider\nGPT / Gemini]
-    F -->|Respuesta Generada| G[💻 Overlay GUI]
+## 🏗️ Arquitectura del Sistema
+
+```text
++---------------------+
+|  Cliente de PoE 2   |
++---------------------+
+           |
+           | (Captura de pantalla externa)
+           v
++---------------------+
+|  Módulo Vision/OCR  |
++---------------------+
+           |
+           | (Extracción de stats / texto)
+           v
++---------------------+       +------------------------+
+| Extractor Contexto  | ----> | Engine RAG (LlamaIndex)| <--- [ Base de Conocimiento ]
++---------------------+       +------------------------+      (Wikis, Guides, PoE Ninja)
+                                           |
+                                           v
+                              +------------------------+
+                              |   LLM (GPT / Gemini)   |
+                              +------------------------+
+                                           |
+                                           v
+                              +------------------------+
+                              |      Overlay GUI       |
+                              +------------------------+
+```
+---
+
+## 🛠️ Tech Stack
+
+* **Core & Backend:** Python 3.10+
+* **Visión Artificial & OCR:** OpenCV, Tesseract OCR *(YOLO en fases avanzadas)*
+* **Orquestación RAG:** LlamaIndex
+* **Vector DB:** ChromaDB / FAISS
+* **Procesamiento de Vídeos:** `yt-dlp` + OpenAI Whisper
+* **UI / Overlay:** PyQt / DearPyGui (Pendiente de decisión)
+
+---
+
+## 🚀 Roadmap de Desarrollo
+
+- [ ] **Fase 1: MVP Básico** — Captura manual, integración con LLM y respuestas contextuales simples.
+- [ ] **Fase 2: Motor OCR** — Detección automática de texto en pantalla y extracción de stats de items.
+- [ ] **Fase 3: Pipeline RAG** — Indexado de wikis, base de datos de items y guías actualizadas del meta.
+- [ ] **Fase 4: Build Fingerprinting** — Detección automática de arquetipos, gemas y pasivas del personaje.
+- [ ] **Fase 5: Ingesta de Vídeo** — Transcripción e indexado de guías de YouTube mediante embeddings.
+- [ ] **Fase 6: Overlay In-Game** — Interfaz flotante externa para lectura cómoda en partida.
+- [ ] **Fase 7: Memoria Persistente** — Seguimiento del progreso del personaje a lo largo del tiempo.
+
+---
+
+## 📄 Licencia
+
+Este proyecto está bajo la Licencia MIT. Consulta el archivo `LICENSE` para obtener más información.
