@@ -1,0 +1,47 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Entornos virtuales
+.venv/
+venv/
+env/
+ENV/
+.env
+
+# Configuración de IDEs
+.vscode/
+!.vscode/settings.json
+.idea/
+
+# Sistema operativo
+.DS_Store
+Thumbs.db
+
+# Claves de API, credenciales y variables de entorno
+api_keys.json
+secrets.json
+*.env.*
+
+# Proyecto PoE 2 Copilot - Bases de datos vectoriales locales
+chroma_db/
+faiss_index/
+*.sqlite
+*.db
+
+# Proyecto PoE 2 Copilot - Capturas y archivos temporales
+captures/
+temp_screenshots/
+*.png
+*.jpg
+*.jpeg
+
+# Logs de ejecución
+*.log
+
+# Pesos de modelos locales u ONNX (si usas YOLO u Ollama local)
+models/
+*.bin
+*.onnx
+*.engine
