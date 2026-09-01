@@ -1,3 +1,6 @@
-"""Vision package for screenshots, OCR, and item parsing."""
+"""Paquete de visión para capturas, OCR y análisis de objetos."""
 
-__all__ = []
+from .capture import ScreenCapturer
+
+__all__ = ["ScreenCapturer"]
+

@@ -1,3 +1,3 @@
-"""RAG package for retrieval and ingestion modules."""
+"""Paquete RAG para los módulos de recuperación e ingesta."""
 
 __all__ = []

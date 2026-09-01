@@ -1,4 +1,4 @@
-"""Adapter for Path of Exile 2 integration."""
+"""Adaptador para la integración de Path of Exile 2."""
 
 from __future__ import annotations
 
@@ -8,20 +8,20 @@ from src.adapters.base_adapter import BaseGameAdapter
 
 
 class PoE2Adapter(BaseGameAdapter):
-    """Concrete adapter for Path of Exile 2.
+    """Adaptador concreto para Path of Exile 2.
 
-    This class contains the expected interface for receiving, normalizing, and
-    exposing game-related information for the rest of the app.
+    Esta clase define la interfaz esperada para recibir, normalizar y exponer
+    la información relacionada con el juego al resto de la aplicación.
     """
 
     def connect(self) -> bool:
-        """Connect to the game or data source."""
+        """Conecta con el juego o la fuente de datos."""
         return True
 
     def fetch_data(self) -> Dict[str, Any]:
-        """Return normalized game-state data."""
+        """Devuelve datos del estado del juego ya normalizados."""
         return {}
 
     def parse(self, raw_data: Any) -> Dict[str, Any]:
-        """Parse raw game payloads into a normalized dictionary."""
+        """Parsea cargas útiles crudas del juego en un diccionario normalizado."""
         return {"raw": raw_data}

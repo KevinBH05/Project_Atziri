@@ -1,4 +1,4 @@
-"""Overlay UI for in-game assistant interactions."""
+"""Interfaz overlay para interacciones del asistente dentro del juego."""
 
 from __future__ import annotations
 
@@ -6,12 +6,12 @@ from typing import Any
 
 
 class Overlay:
-    """Minimal overlay application used to render assistant UI elements."""
+    """Aplicación overlay mínima para renderizar elementos de la interfaz del asistente."""
 
     def show(self, text: str | None = None, **kwargs: Any) -> None:
-        """Display the overlay with optional content."""
+        """Muestra el overlay con contenido opcional."""
         return None
 
     def hide(self) -> None:
-        """Hide the overlay from view."""
+        """Oculta el overlay de la vista."""
         return None

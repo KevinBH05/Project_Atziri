@@ -1,3 +1,3 @@
-"""Core package for the AI Gaming Copilot system."""
+"""Paquete principal de Ziri para los componentes del AI Gaming Copilot."""
 
 __all__ = []

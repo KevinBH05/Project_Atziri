@@ -1,4 +1,4 @@
-"""PoEDB-specific ingestor placeholder."""
+"""Marcador de posición para un ingestor específico de PoEDB."""
 
 from __future__ import annotations
 
@@ -8,8 +8,8 @@ from src.rag.base_ingestor import BaseIngestor
 
 
 class PoEDBIngestor(BaseIngestor):
-    """Load and normalize data from PoEDB-like sources."""
+    """Carga y normaliza datos procedentes de fuentes tipo PoEDB."""
 
     def ingest(self, source: Any) -> Iterable[Any]:
-        """Yield documents extracted from PoEDB source content."""
+        """Genera documentos extraídos del contenido de una fuente PoEDB."""
         yield from []

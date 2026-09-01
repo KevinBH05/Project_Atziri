@@ -1,4 +1,4 @@
-"""Abstract base classes for RAG ingestors."""
+"""Clases base abstractas para ingestors RAG."""
 
 from __future__ import annotations
 
@@ -7,12 +7,13 @@ from typing import Any, Iterable
 
 
 class BaseIngestor(ABC):
-    """Abstract contract for ingestion pipelines.
+    """Contrato abstracto para pipelines de ingestión.
 
-    Concrete ingestors read source content and return normalized documents for
-    indexing in a vector store or knowledge base.
+    Los ingestors concretos leen contenido desde una fuente y devuelven
+    documentos normalizados para indexarlos en un vector store o base de
+    conocimiento.
     """
 
     @abstractmethod
     def ingest(self, source: Any) -> Iterable[Any]:
-        """Ingest content from a source and yield normalized documents."""
+        """Ingesta contenido desde una fuente y devuelve documentos normalizados."""

@@ -1,3 +1,3 @@
-"""Integration helpers package."""
+"""Paquete de utilidades de integración."""
 
 __all__ = []

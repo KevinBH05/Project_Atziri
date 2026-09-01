@@ -1,4 +1,4 @@
-"""UI component definitions used by the overlay and panels."""
+"""Definiciones de componentes de interfaz usados por el overlay y paneles."""
 
 from __future__ import annotations
 
@@ -6,16 +6,16 @@ from typing import Any, Dict
 
 
 class InfoPanel:
-    """Display high-level information for the user in an overlay panel."""
+    """Muestra información de alto nivel para el usuario en un panel del overlay."""
 
     def render(self, data: Dict[str, Any]) -> str:
-        """Render a serializable representation of the given data."""
+        """Genera una representación serializable de los datos recibidos."""
         return str(data)
 
 
 class ActionButton:
-    """Button-like UI element for assistant actions."""
+    """Elemento tipo botón para acciones del asistente."""
 
     def click(self, **kwargs: Any) -> None:
-        """Handle click actions for the component."""
+        """Gestiona los clics del componente."""
         return None

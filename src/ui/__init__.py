@@ -1,3 +1,3 @@
-"""User interface package for overlays and components."""
+"""Paquete de interfaz de usuario para overlays y componentes."""
 
 __all__ = []

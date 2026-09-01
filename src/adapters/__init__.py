@@ -1,3 +1,3 @@
-"""Adapters package for game-specific integrations."""
+"""Paquete de adaptadores para integraciones específicas del juego."""
 
 __all__ = []

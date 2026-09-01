@@ -1,3 +1,3 @@
-"""Ingestors package for source-specific document loaders."""
+"""Paquete de ingestors para cargadores de documentos específicos por fuente."""
 
 __all__ = []

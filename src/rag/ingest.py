@@ -1,4 +1,4 @@
-"""High-level ingestion orchestration for knowledge documents."""
+"""Orquestación de ingesta de alto nivel para documentos de conocimiento."""
 
 from __future__ import annotations
 
@@ -6,12 +6,12 @@ from typing import Any, Iterable
 
 
 def ingest_documents(sources: Iterable[Any]) -> list[Any]:
-    """Trigger ingestion for a set of document sources.
+    """Dispara la ingesta para un conjunto de fuentes de documentos.
 
     Args:
-        sources: Iterable of input documents or external data sources.
+        sources: Iterable con documentos o fuentes de datos externas.
 
     Returns:
-        An empty list placeholder until the real ingestion pipeline is ready.
+        Una lista vacía como marcador de posición hasta que la pipeline real esté lista.
     """
     return []

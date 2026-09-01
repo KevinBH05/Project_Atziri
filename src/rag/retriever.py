@@ -1,4 +1,4 @@
-"""Retrieval layer for document search and contextual lookup."""
+"""Capa de recuperación para búsquedas de documentos y contexto."""
 
 from __future__ import annotations
 
@@ -6,8 +6,8 @@ from typing import Any, List
 
 
 class Retriever:
-    """Retrieve relevant context from a vector store or knowledge base."""
+    """Recupera contexto relevante desde un vector store o base de conocimiento."""
 
     def search(self, query: str, top_k: int = 5) -> List[Any]:
-        """Search for relevant documents given a user query."""
+        """Busca documentos relevantes para una consulta del usuario."""
         return []

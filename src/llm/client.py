@@ -1,4 +1,4 @@
-"""LLM client abstraction for model interactions."""
+"""Abstracción del cliente LLM para interactuar con modelos."""
 
 from __future__ import annotations
 
@@ -6,16 +6,16 @@ from typing import Any, Dict, List
 
 
 class LLMClient:
-    """Minimal abstraction for sending prompts to an LLM provider."""
+    """Abstracción mínima para enviar prompts a un proveedor de LLM."""
 
     def __init__(self, model: str = "gpt-4o-mini") -> None:
-        """Initialize the client with a target model."""
+        """Inicializa el cliente con el modelo objetivo."""
         self.model = model
 
     def generate(self, prompt: str, context: Dict[str, Any] | None = None) -> str:
-        """Generate a model response from a prompt and optional context."""
+        """Genera una respuesta del modelo a partir de un prompt y contexto opcional."""
         return ""
 
     def chat(self, messages: List[Dict[str, str]], **kwargs: Any) -> str:
-        """Send a chat-style prompt to the model provider."""
+        """Envía un prompt tipo chat al proveedor del modelo."""
         return ""

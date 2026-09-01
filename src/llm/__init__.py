@@ -1,3 +1,3 @@
-"""LLM client and prompt context utilities."""
+"""Utilidades del cliente LLM y del contexto de prompts."""
 
 __all__ = []
