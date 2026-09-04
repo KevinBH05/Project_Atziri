@@ -9,12 +9,15 @@ from __future__ import annotations
 import base64
 import xml.etree.ElementTree as ET
 import zlib
+import json
+from datetime import datetime
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
-# Reutilización de tipos desde item_parser
-from item_parser import EquipmentItem, GemItem, ItemParser
+from opentelemetry import context
+
+from vision.item_parser import EquipmentItem, GemItem, ItemParser
 
 
 # =============================================================================
@@ -48,11 +51,12 @@ class SkillGroup:
 class PoBStats:
     """Estadísticas agregadas del personaje calculadas por PoB."""
     # Daño y Métricas de Combate
-    dps: float = 0.0
-    hit_damage: float = 0.0
-    attack_speed: float = 0.0
-    crit_chance: float = 0.0
-    crit_multiplier: float = 0.0
+    combined_dps: float = 0.0
+    hit_dps: float = 0.0
+    poison_dps: float = 0.0
+    dot_dps: float = 0.0
+    average_damage: float = 0.0
+    attack_cast_rate: float = 0.0
 
     # Recursos
     life: float = 0.0
@@ -90,7 +94,7 @@ class PoBBuild:
     main_skill_name: str
     stats: PoBStats
     passive_tree: PassiveTreeData
-    equipped_items: Dict[str, EquipmentItem] = field(default_factory=dict)  # Mapped por Slot Name
+    equipped_items: Dict[str, EquipmentItem] = field(default_factory=dict)  # Clave: nombre del espacio
     skill_groups: List[SkillGroup] = field(default_factory=list)
 
 
@@ -181,28 +185,26 @@ class PoBLoader:
             if stat_name and val is not None:
                 raw_stats[stat_name] = self._safe_float(val)
 
-        stats.dps = (
-            raw_stats.get("CombinedDPS")
+        # Captura de métricas de daño avanzadas
+        stats.combined_dps = (
+            raw_stats.get("Total DPS per Poison")
+            or raw_stats.get("CombinedDPS")
             or raw_stats.get("TotalDPS")
-            or raw_stats.get("WithPoisonDPS")
-            or raw_stats.get("MainHandDPS")
             or 0.0
         )
-        stats.hit_damage = raw_stats.get("AverageHit") or raw_stats.get("AverageDamage") or 0.0
-        stats.attack_speed = raw_stats.get("Speed") or raw_stats.get("HitSpeed") or 0.0
-        stats.crit_chance = raw_stats.get("CritChance", 0.0)
-        stats.crit_multiplier = raw_stats.get("CritMultiplier", 0.0)
+        stats.hit_dps = raw_stats.get("Hit DPS") or raw_stats.get("MainHandDPS") or 0.0
+        stats.poison_dps = raw_stats.get("Poison DPS", 0.0)
+        stats.dot_dps = raw_stats.get("Total DoT DPS", 0.0)
+        stats.average_damage = raw_stats.get("Average Damage") or raw_stats.get("AverageHit") or 0.0
+        stats.attack_cast_rate = raw_stats.get("Attack/Cast Rate") or raw_stats.get("Speed") or 0.0
 
+        # Resto de extracciones (Vida, Maná, Resistencias...)
         stats.life = raw_stats.get("Life", 0.0)
         stats.mana = raw_stats.get("Mana", 0.0)
-        stats.spirit_total = raw_stats.get("Spirit") or raw_stats.get("SpiritLimit") or 0.0
-        stats.spirit_reserved = raw_stats.get("SpiritReserved") or raw_stats.get("ManaReserved") or 0.0
-        stats.spirit_unreserved = max(0.0, stats.spirit_total - stats.spirit_reserved)
-
         stats.armour = raw_stats.get("Armour", 0.0)
         stats.evasion = raw_stats.get("Evasion", 0.0)
         stats.energy_shield = raw_stats.get("EnergyShield", 0.0)
-
+        
         stats.fire_resistance = raw_stats.get("FireResist", 0.0)
         stats.cold_resistance = raw_stats.get("ColdResist", 0.0)
         stats.lightning_resistance = raw_stats.get("LightningResist", 0.0)
@@ -211,10 +213,6 @@ class PoBLoader:
         stats.strength = raw_stats.get("Strength", 0.0)
         stats.dexterity = raw_stats.get("Dexterity", 0.0)
         stats.intelligence = raw_stats.get("Intelligence", 0.0)
-
-        stats.req_strength = raw_stats.get("ReqStr", 0.0)
-        stats.req_dexterity = raw_stats.get("ReqDex", 0.0)
-        stats.req_intelligence = raw_stats.get("ReqInt", 0.0)
 
         return stats
 
@@ -310,9 +308,9 @@ class PoBLoader:
                 spirit = self._safe_int(gem_elem.attrib.get("spiritReservation"), 0)
 
                 tags_attr = (
-                    gem_elem.attrib.get("tags") 
-                    or gem_elem.attrib.get("types") 
-                    or gem_elem.attrib.get("supportsGems") 
+                    gem_elem.attrib.get("tags")
+                    or gem_elem.attrib.get("types")
+                    or gem_elem.attrib.get("supportsGems")
                     or ""
                 )
                 tags = [t.strip() for t in tags_attr.split(",") if t.strip()]
@@ -326,7 +324,7 @@ class PoBLoader:
                     gem_level=gem_level,
                     quality=quality,
                     spirit_reservation=spirit,
-                    tags=tags  # <-- Aquí guardamos los tags reales de la gema
+                    tags=tags
                 )
                 gems.append(gem_item)
 
@@ -381,3 +379,60 @@ class PoBParser(PoBLoader):
 
     def parse(self, payload: str | Path) -> PoBBuild:
         return PoBLoader(payload).load_build()
+
+def update_user_context_file(self, context_json_path: str | Path, source_payload: str | Path) -> dict:
+    """Parsea el PoB y actualiza automáticamente la sección pobb_data del user_context."""
+    build = self.parse(source_payload)
+    path = Path(context_json_path)
+    
+    if path.exists():
+        with open(path, "r", encoding="utf-8") as f:
+            context = json.load(f)
+    else:
+        context = {}
+
+    context["character_name"] = build.character_name
+    context["pob_link"] = str(source_payload) if not isinstance(source_payload, Path) else ""
+    
+    context["pob_data"] = {
+        "last_parsed": datetime.utcnow().isoformat(),
+        "level": build.level,
+        "class": build.character_class,
+        "ascendancy": "", 
+        "main_skill": build.main_skill_name,
+        "stats": {
+            "combined_dps": build.stats.combined_dps,
+            "hit_dps": build.stats.hit_dps,
+            "poison_dps": build.stats.poison_dps,
+            "dot_dps": build.stats.dot_dps,
+            "average_damage": build.stats.average_damage,
+            "attack_cast_rate": build.stats.attack_cast_rate,
+            "life": build.stats.life,
+            "mana": build.stats.mana,
+            "armour": build.stats.armour,
+            "evasion": build.stats.evasion,
+            "energy_shield": build.stats.energy_shield,
+            "resistances": {
+                "fire": build.stats.fire_resistance,
+                "cold": build.stats.cold_resistance,
+                "lightning": build.stats.lightning_resistance,
+                "chaos": build.stats.chaos_resistance
+            },
+            "attributes": {
+                "strength": build.stats.strength,
+                "dexterity": build.stats.dexterity,
+                "intelligence": build.stats.intelligence
+            }
+        },
+        "active_keystones": build.passive_tree.active_keystones,
+        "active_notables": build.passive_tree.active_notables,
+        "equipped_slots": list(build.equipped_items.keys())
+    }
+    
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(context, f, indent=2, ensure_ascii=False)
+        
+    return context
+
+# Asignar el método a la clase existente
+PoBParser.update_user_context = update_user_context_file

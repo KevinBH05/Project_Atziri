@@ -8,63 +8,63 @@ project:
   environment: "development"
 
 # ---------------------------------------------------------------------
-# Configuración del Juego Activo & Adaptadores
+# Configuración del Juego Activo
 # ---------------------------------------------------------------------
 game:
-  active_adapter: "poe2"  # Opciones: poe2, diablo4, etc.
+  active_adapter: "poe2"
   window_title_keywords:
     - "Path of Exile 2"
     - "PathofExile"
-  capture_fps: 0.5  # Polling pasivo: 1 captura cada 2 segundos
 
 # ---------------------------------------------------------------------
-# Motor de Visión Artificial y OCR
+# Módulo de Visión Artificial (Multimodal API)
 # ---------------------------------------------------------------------
 vision:
-  ocr_engine: "tesseract"  # Opciones: tesseract, easyocr
-  tesseract_cmd_path: ""   # Dejar vacío si está en el PATH del SO
-  preprocessing:
-    grayscale: true
-    thresholding: true
-    scale_factor: 2.0
+  enabled: true
+  multimodal_provider: "gemini"  # Procesa capturas directamente vía API Vision
+  image_detail_level: "high"
+  max_image_dimension: 1024     # Redimensionamiento ligero pre-envío para optimizar latencia
 
 # ---------------------------------------------------------------------
-# Integración con Terceros (Path of Building)
+# Integración de Contexto de Usuario (Path of Building)
 # ---------------------------------------------------------------------
 integrations:
   pob:
     enabled: true
-    default_build_path: ""  # Ruta local a archivo .xml si se requiere
-    auto_sync: false
+    default_build_path: "./data/user_context/current_build.xml"
 
 # ---------------------------------------------------------------------
-# Ingesta & Motor RAG (LlamaIndex)
+# Motor RAG Local Estático (ChromaDB)
 # ---------------------------------------------------------------------
 rag:
-  vector_store: "chroma"  # Opciones: chroma, faiss
+  vector_store: "chroma"
   chroma_persist_dir: "./data/vector_store/chroma"
-  chunk_size: 512
-  chunk_overlap: 50
-  top_k_results: 3
-  ingestors:
-    poedb:
-      enabled: true
-      update_interval_hours: 24
-    maxroll:
-      enabled: true
+  collection_name: "atziri_kb"
+  embedding_model: "all-MiniLM-L6-v2"  # Modelo de embeddings local súper ligero
+  top_k_results: 4
 
 # ---------------------------------------------------------------------
-# Proveedor de Inteligencia Artificial (LLM)
+# Herramientas Dinámicas (Tool Calling en Tiempo Real)
+# ---------------------------------------------------------------------
+tools:
+  poe_ninja:
+    enabled: true
+    cache_ttl_hours: 24
+  youtube_transcripts:
+    enabled: true
+    max_results: 3
+
+# ---------------------------------------------------------------------
+# Proveedor de Inteligencia Artificial (LLM & Agente)
 # ---------------------------------------------------------------------
 llm:
-  provider: "gemini"  # Opciones: gemini, openai, local
+  provider: "gemini"
   model_name: "gemini-2.5-flash"
   temperature: 0.2
-  max_tokens: 500
-  system_prompt_template: "default_gaming"
+  max_tokens: 800
 
 # ---------------------------------------------------------------------
-# Interfaz de Usuario / Overlay Flotante
+# Interfaz de Usuario
 # ---------------------------------------------------------------------
 ui:
   framework: "pyqt6"

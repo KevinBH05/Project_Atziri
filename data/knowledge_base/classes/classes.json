@@ -1,0 +1,542 @@
+[
+  {
+    "id": "druid",
+    "name": "El Druida",
+    "primary_attributes": ["STR", "INT"],
+    "primary_defenses": ["Armour", "Energy Shield"],
+    "resource_mechanics": ["Mana", "Rage", "Spirit"],
+    "native_weapon_bases": ["Animal Talismans", "Staves"],
+    "ascendancies": [
+      {
+        "id": "shaman",
+        "name": "Shaman",
+        "role": "Potenciador de hechizos vía Rabia y amplificador de daño elemental masivo",
+        "key_notables": [],
+        "core_synergy": "Potencia los hechizos a través del consumo de Rabia acumulada en formas de combate."
+      },
+      {
+        "id": "oracle",
+        "name": "Oracle",
+        "role": "Predicción del combate, manipulación de fatos y alteración de estados cósmicos/elementales",
+        "key_notables": [],
+        "core_synergy": "Anticipa el daño enemigo, manipula la probabilidad de acierto y potencia hechizos mediante presagios."
+      }
+    ],
+    "archetypes": [
+      {
+        "id": "shapeshift-slam",
+        "name": "Shapeshift Slam (Oso / Lobo - Shaman)",
+        "recommended_ascendancy": "shaman",
+        "main_skills": ["Fury of the Mountain", "Rampage", "Maul"],
+        "utility_skills": ["Pounce", "Shockwave Totem"],
+        "required_keystones": ["Transición Fluida de Formas"],
+        "stat_priorities": [
+          "Vida máxima",
+          "Regeneración de Vida",
+          "Daño Físico/Fuego",
+          "Generación de Rabia",
+          "Armadura"
+        ],
+        "synergistic_uniques": []
+      },
+      {
+        "id": "plant-oracle",
+        "name": "Oráculo de Plantas (Plant Oracle)",
+        "recommended_ascendancy": "oracle",
+        "main_skills": ["Entangling Vines", "Earthquake"],
+        "utility_skills": [],
+        "required_keystones": ["Control de Naturaleza"],
+        "stat_priorities": [
+          "Daño de Naturaleza/Caos continuo",
+          "Velocidad de Lanzamiento",
+          "Vida",
+          "Bloqueo de hechizos"
+        ],
+        "synergistic_uniques": []
+      }
+    ],
+    "gear_targets": {
+      "ideal_bases": ["Animal Talismans", "Bastones Mágicos", "Armour / Energy Shield"],
+      "must_have_affixes": ["Vida Máxima", "Resistencias Elementales", "Daño Elemental/Naturaleza"]
+    }
+  },
+  {
+    "id": "huntress",
+    "name": "La Cazadora",
+    "primary_attributes": ["DEX"],
+    "primary_defenses": ["Evasion Rating", "Energy Shield"],
+    "resource_mechanics": ["Mana", "Wisps / Compañeros"],
+    "native_weapon_bases": ["Spears", "Shields"],
+    "ascendancies": [
+      {
+        "id": "amazon",
+        "name": "Amazon",
+        "role": "Potenciador de daño directo de lanza y probabilidad de impacto crítico",
+        "key_notables": [],
+        "core_synergy": "Suma potencia a la combinación melé/arrojadiza de lanzas en combate directo."
+      },
+      {
+        "id": "spirit-walker",
+        "name": "Spirit Walker",
+        "role": "Especialista en animales de apoyo y captura de jefes únicos como compañeros",
+        "key_notables": [],
+        "core_synergy": "Permite capturar jefes únicos y complementar el daño híbrido mediante bestias."
+      },
+      {
+        "id": "ritualist",
+        "name": "Ritualist",
+        "role": "Maestra de tótems ancestrales, sacrificios de sangre y auras de caza",
+        "key_notables": [],
+        "core_synergy": "Potencia el área de combate mediante altares y sacrificios que amplifican el daño de bestias y lanzas."
+      }
+    ],
+    "archetypes": [
+      {
+        "id": "spear-and-twister",
+        "name": "Spear & Twister",
+        "recommended_ascendancy": "amazon",
+        "main_skills": ["Whirling Slash", "Twister", "Explosive Spear"],
+        "utility_skills": ["Disengage"],
+        "required_keystones": ["Mecánica Engagement/Disengage"],
+        "stat_priorities": [
+          "Daño con Lanzamiento de Lanza",
+          "Velocidad de Ataque",
+          "Probabilidad de Crítico"
+        ],
+        "synergistic_uniques": []
+      },
+      {
+        "id": "spirit-companion-master",
+        "name": "Spirit Companion Master",
+        "recommended_ascendancy": "spirit-walker",
+        "main_skills": ["Tame Beast", "Vivid Stampede", "Primal Strikes"],
+        "utility_skills": [],
+        "required_keystones": ["The Catha's Balance"],
+        "stat_priorities": [
+          "Daño de Compañeros (Scaled with Main Hand)",
+          "Evasión",
+          "Vida"
+        ],
+        "synergistic_uniques": []
+      }
+    ],
+    "gear_targets": {
+      "ideal_bases": ["Lanza a una mano (Spear)", "Escudo", "Lanza secundaria", "Evasión y Escudo de Energía"],
+      "must_have_affixes": ["Daño de Lanza local", "Velocidad de Ataque", "Vida Máxima"]
+    }
+  },
+  {
+    "id": "witch",
+    "name": "La Bruja",
+    "primary_attributes": ["INT"],
+    "primary_defenses": ["Energy Shield"],
+    "resource_mechanics": ["Mana", "Spirit", "Energy Shield"],
+    "native_weapon_bases": ["Wands", "Daggers"],
+    "ascendancies": [
+      {
+        "id": "infernalist",
+        "name": "Infernalist",
+        "role": "Especialista en hordas e invocaciones elementales de fuego",
+        "key_notables": [],
+        "core_synergy": "Potencia los mandos e invocaciones quemando el terreno."
+      },
+      {
+        "id": "lich",
+        "name": "Lich",
+        "role": "Comandante de hordas masivas de muertos vivientes e inmortalidad temporal",
+        "key_notables": [],
+        "core_synergy": "Aporta regeneración nigromántica sostenida y control de grandes masas de no-muertos."
+      },
+      {
+        "id": "blood-mage",
+        "name": "Blood Mage",
+        "role": "Especialista en Magia de Sangre, robo de vida e incremento de daño por sangrado",
+        "key_notables": [],
+        "core_synergy": "Sacrifica Vida en lugar de Maná para costear hechizos destruyendo enemigos con Physical DoT."
+      }
+    ],
+    "archetypes": [
+      {
+        "id": "skeleton-army-commander",
+        "name": "Skeleton Army Commander",
+        "recommended_ascendancy": "infernalist",
+        "main_skills": ["Skeletal Warriors", "Skeletal Arsonists"],
+        "utility_skills": ["Command Skills"],
+        "required_keystones": ["Habilidades de Mando (Command Skills)"],
+        "stat_priorities": [
+          "Reserva de Espíritu (Spirit)",
+          "Vida de Esbirros",
+          "Daño de Esbirros"
+        ],
+        "synergistic_uniques": []
+      },
+      {
+        "id": "maga-de-sangre",
+        "name": "Maga de Sangre a Sangrado",
+        "recommended_ascendancy": "blood-mage",
+        "main_skills": ["Exsanguinate", "Corrupting Fever", "Reap"],
+        "utility_skills": ["Blood Offering"],
+        "required_keystones": ["Magia de Sangre (Blood Magic)"],
+        "stat_priorities": [
+          "Daño Físico con el Tiempo (Physical DoT)",
+          "Multiplicador de Sangrado",
+          "Vida Máxima",
+          "Regeneración"
+        ],
+        "synergistic_uniques": []
+      }
+    ],
+    "gear_targets": {
+      "ideal_bases": ["Varitas (Wands)", "Dagas Mágicas", "Energy Shield / Vida"],
+      "must_have_affixes": ["Espíritu Plano", "Multiplicador de Daño Físico con el tiempo"]
+    }
+  },
+  {
+    "id": "ranger",
+    "name": "La Exploradora",
+    "primary_attributes": ["DEX"],
+    "primary_defenses": ["Evasion Rating"],
+    "resource_mechanics": ["Mana"],
+    "native_weapon_bases": ["Bows", "Quivers"],
+    "ascendancies": [
+      {
+        "id": "deadeye",
+        "name": "Deadeye",
+        "role": "Adición de proyectiles, precisión extrema y encadenamiento",
+        "key_notables": [],
+        "core_synergy": "Multiplica los impactos a distancia permitiendo barridos masivos de mapas."
+      },
+      {
+        "id": "pathfinder",
+        "name": "Pathfinder",
+        "role": "Proliferación de veneno en cadena, mantenimiento de frascos y sprint continuo",
+        "key_notables": [],
+        "core_synergy": "Mantiene efectos de frascos activos permanentemente mientras esparce estados alterados."
+      }
+    ],
+    "archetypes": [
+      {
+        "id": "lightning-arrow-deadeye",
+        "name": "Lightning Arrow Storm-Sniper",
+        "recommended_ascendancy": "deadeye",
+        "main_skills": ["Lightning Arrow", "Lightning Rod", "Storm Rain"],
+        "utility_skills": ["Sniper's Mark"],
+        "required_keystones": ["Kiting / Mobile Combat", "Sinergia Lightning Rod"],
+        "stat_priorities": [
+          "Velocidad de Ataque",
+          "Cantidad de Proyectiles",
+          "Probabilidad Crítica",
+          "Daño de Rayo"
+        ],
+        "synergistic_uniques": []
+      },
+      {
+        "id": "poison-pathfinder",
+        "name": "Poison Proliferation Sprint",
+        "recommended_ascendancy": "pathfinder",
+        "main_skills": ["Poisonburst Arrow", "Gas Arrow", "Vine Arrow"],
+        "utility_skills": [],
+        "required_keystones": [],
+        "stat_priorities": [
+          "Daño de Veneno continuo (Poison DOT)",
+          "Efecto de Frascos",
+          "Evasión"
+        ],
+        "synergistic_uniques": []
+      }
+    ],
+    "gear_targets": {
+      "ideal_bases": ["Arcos a dos manos (Bows)", "Carcajs (Quivers)", "Evasion Rating"],
+      "must_have_affixes": ["Velocidad de Movimiento", "Daño Elemental/Físico a Ataques", "Multiplicador de Crítico"]
+    }
+  },
+  {
+    "id": "monk",
+    "name": "El Monje",
+    "primary_attributes": ["DEX", "INT"],
+    "primary_defenses": ["Evasion Rating", "Energy Shield"],
+    "resource_mechanics": ["Mana", "Charges"],
+    "native_weapon_bases": ["Unarmed", "Staves"],
+    "ascendancies": [
+      {
+        "id": "invoker",
+        "name": "Invoker",
+        "role": "Canalizador elemental y manipulación avanzada de cargas",
+        "key_notables": [],
+        "core_synergy": "Potencia el combate rápido en cadena e imbuye ataques con estados elementales."
+      },
+      {
+        "id": "martial-artist",
+        "name": "Martial Artist",
+        "role": "Maestro del combate cuerpo a cuerpo desarmado, velocidad extrema y técnica física",
+        "key_notables": [],
+        "core_synergy": "Maximiza la efectividad del combate desarmado (Hollow Focus) aumentando la frecuencia de golpes y movilidad."
+      },
+      {
+        "id": "acolyte-of-chayula",
+        "name": "Acolyte of Chayula",
+        "role": "Dominio del daño de caos, robo de recursos y Escudo de Energía",
+        "key_notables": [],
+        "core_synergy": "Convierte los ataques en descargas de Caos manteniendo la supervivencia."
+      }
+    ],
+    "archetypes": [
+      {
+        "id": "hollow-focus-flicker",
+        "name": "Hollow Focus Flicker Strike",
+        "recommended_ascendancy": "martial-artist",
+        "main_skills": ["Flicker Strike", "Killing Palm"],
+        "utility_skills": ["Whirling Dervish"],
+        "required_keystones": ["Hollow Focus", "Cadena de Flicker Strike"],
+        "stat_priorities": [
+          "Generación de Cargas de Frenesí",
+          "Daño Desarmado",
+          "Velocidad de Ataque Extrema",
+          "Precisión"
+        ],
+        "synergistic_uniques": []
+      },
+      {
+        "id": "darkness-chaos-strike",
+        "name": "Darkness & Chaos Strike",
+        "recommended_ascendancy": "acolyte-of-chayula",
+        "main_skills": ["Hand of Chayula", "Siphoning Strike"],
+        "utility_skills": [],
+        "required_keystones": [],
+        "stat_priorities": [
+          "Daño de Caos",
+          "Robo de Vida/Maná",
+          "Escudo de Energía"
+        ],
+        "synergistic_uniques": []
+      }
+    ],
+    "gear_targets": {
+      "ideal_bases": ["Combate Desarmado (Unarmed)", "Bastones ligeros", "Evasion / Energy Shield"],
+      "must_have_affixes": ["Daño añadido a ataques desarmados", "Multiplicador Crítico", "Cargas Máximas", "Evasión"]
+    }
+  },
+  {
+    "id": "mercenary",
+    "name": "El Mercenario",
+    "primary_attributes": ["STR", "DEX"],
+    "primary_defenses": ["Armour", "Evasion Rating"],
+    "resource_mechanics": ["Mana", "Ammo Clips"],
+    "native_weapon_bases": ["Crossbows"],
+    "ascendancies": [
+      {
+        "id": "witch-hunter",
+        "name": "Witch Hunter",
+        "role": "Escalado de daño elemental congelando e impactando con rayo",
+        "key_notables": [],
+        "core_synergy": "Combina estados de congelación profunda con impactos de rayo masivos."
+      },
+      {
+        "id": "gemling-legionnaire",
+        "name": "Gemling Legionnaire",
+        "role": "Escalado de daño y área mediante gemas engarzadas en árbol y equipo",
+        "key_notables": [],
+        "core_synergy": "Aumenta la capacidad de detonación cuantas más gemas de soporte se vinculen."
+      },
+      {
+        "id": "tactician",
+        "name": "Tactician",
+        "role": "Especialista en control del terreno, estandartes de combate y gestión de munición",
+        "key_notables": [],
+        "core_synergy": "Ofrece ventajas de posicionamiento, recarga táctica rápida y debilitación zonal de enemigos."
+      }
+    ],
+    "archetypes": [
+      {
+        "id": "ballesta-elemental",
+        "name": "Ballesta Elemental Hielo/Rayo",
+        "recommended_ascendancy": "witch-hunter",
+        "main_skills": ["Permafrost Ammo", "Lightning Ammo", "Rapid Shot"],
+        "utility_skills": ["Power Shot"],
+        "required_keystones": ["Mecánica de Munición y Accesorio (Attachments)"],
+        "stat_priorities": [
+          "Daño de Rayo/Hielo Aumentado",
+          "Penetración de Resistencias Elementales",
+          "Velocidad de Recarga de Munición"
+        ],
+        "synergistic_uniques": []
+      },
+      {
+        "id": "gemling-grenadier",
+        "name": "Gemling Grenadier",
+        "recommended_ascendancy": "gemling-legionnaire",
+        "main_skills": ["Explosive Grenade", "Gas Grenade"],
+        "utility_skills": ["Grenade Launcher Attachment"],
+        "required_keystones": ["Sinergia Gemling"],
+        "stat_priorities": [
+          "Reducción de Cooldown de Granadas",
+          "Daño de Área",
+          "Eficiencia de Gemas"
+        ],
+        "synergistic_uniques": []
+      }
+    ],
+    "gear_targets": {
+      "ideal_bases": ["Ballestas (Crossbows)", "Accesorio Lanzagranadas", "Armour / Evasion"],
+      "must_have_affixes": ["Velocidad de Ataque", "Nivel de Gemas", "Multiplicador Crítico Elemental", "Vida"]
+    }
+  },
+  {
+    "id": "warrior",
+    "name": "El Guerrero",
+    "primary_attributes": ["STR"],
+    "primary_defenses": ["Armour"],
+    "resource_mechanics": ["Mana", "Stun Gauge"],
+    "native_weapon_bases": ["Maces", "Shields"],
+    "ascendancies": [
+      {
+        "id": "titan",
+        "name": "Titan",
+        "role": "Especializado en Slams, amplificación de aturdimientos y ruptura de defensas",
+        "key_notables": [],
+        "core_synergy": "Lleva al límite la barra de aturdimiento de jefes mediante impactos pesados."
+      },
+      {
+        "id": "warbringer",
+        "name": "Warbringer",
+        "role": "Sinergias avanzadas con Tótems y Gritos de Guerra",
+        "key_notables": [],
+        "core_synergy": "Combina la potenciación de gritos con el despliegue de tótems ancestrales."
+      },
+      {
+        "id": "kitavas-smith",
+        "name": "Kitava's Smith",
+        "role": "Conversión física a fuego, explosiones por ignición y robo de vida ígneo",
+        "key_notables": [],
+        "core_synergy": "Transforma el daño físico en fuego y detona enemigos bajo ignición."
+      }
+    ],
+    "archetypes": [
+      {
+        "id": "stun-heavy-slam-titan",
+        "name": "Stun & Heavy Slam Titan",
+        "recommended_ascendancy": "titan",
+        "main_skills": ["Ground Slam", "Heavy Strike", "Earthquake"],
+        "utility_skills": ["Boneshatter", "Seismic Cry"],
+        "required_keystones": ["Mecánica de Stun", "Combo Grito + Slam"],
+        "stat_priorities": [
+          "Umbral/Multiplicador de Aturdimiento",
+          "Daño Físico Plano",
+          "Vida Máxima"
+        ],
+        "synergistic_uniques": []
+      },
+      {
+        "id": "ancestral-totem-warbringer",
+        "name": "Ancestral Totem Warbringer",
+        "recommended_ascendancy": "warbringer",
+        "main_skills": ["Ancestral Warrior Totem", "Shockwave Totem"],
+        "utility_skills": ["Infernal Cry"],
+        "required_keystones": ["Combo Grito + Slam"],
+        "stat_priorities": [
+          "Daño de Tótems",
+          "Bloqueo con Escudo",
+          "Armadura"
+        ],
+        "synergistic_uniques": []
+      },
+      {
+        "id": "herrero-de-kitava",
+        "name": "Herrero de Kitava a Fuego",
+        "recommended_ascendancy": "kitavas-smith",
+        "main_skills": ["Volcanic Fissure", "Sunder"],
+        "utility_skills": ["Infernal Cry"],
+        "required_keystones": [],
+        "stat_priorities": [
+          "Daño de Fuego",
+          "Multiplicador de Ignición (Ignite)",
+          "Fuerza",
+          "Armadura"
+        ],
+        "synergistic_uniques": []
+      }
+    ],
+    "gear_targets": {
+      "ideal_bases": ["Mazas a dos manos (Two-Handed Maces)", "Maza/Hacha + Escudo", "Armour"],
+      "must_have_affixes": ["Daño Físico/Fuego Local en el Arma", "Vida Máxima", "Reducción de Daño Físico"]
+    }
+  },
+  {
+    "id": "sorceress",
+    "name": "La Hechicera",
+    "primary_attributes": ["INT"],
+    "primary_defenses": ["Energy Shield"],
+    "resource_mechanics": ["Mana", "Spirit", "Energy Shield"],
+    "native_weapon_bases": ["Staves", "Sceptres", "Wands", "Focuses"],
+    "ascendancies": [
+      {
+        "id": "stormweaver",
+        "name": "Stormweaver / Elementalist",
+        "role": "Lanzamiento elemental masivo y dominio de tempestades",
+        "key_notables": [],
+        "core_synergy": "Potencia el daño de rayo, hielo y fuego alternando conjuros."
+      },
+      {
+        "id": "chronomancer",
+        "name": "Chronomancer",
+        "role": "Recuperación de daño y aceleración/reducción de enfriamientos",
+        "key_notables": [],
+        "core_synergy": "Permite rebobinar el daño recibido mediante Damage Recoup."
+      },
+      {
+        "id": "varashas-disciple",
+        "name": "Varasha's Disciple",
+        "role": "Potenciador de esbirros ilusorios y escalado de hechizos canalizados",
+        "key_notables": [],
+        "core_synergy": "Multiplica el daño de conjuros canalizados por cada ilusión activa."
+      }
+    ],
+    "archetypes": [
+      {
+        "id": "tri-elemental-arc-spark",
+        "name": "Tri-Elemental / Arc Spark",
+        "recommended_ascendancy": "stormweaver",
+        "main_skills": ["Spark", "Arc", "Comet"],
+        "utility_skills": ["Flame Wall"],
+        "required_keystones": ["Dual Specialization"],
+        "stat_priorities": [
+          "Daño Elemental",
+          "Velocidad de Lanzamiento (Cast Speed)",
+          "Crítico"
+        ],
+        "synergistic_uniques": []
+      },
+      {
+        "id": "temporal-recoup-chronomancer",
+        "name": "Temporal Recoup Chronomancer",
+        "recommended_ascendancy": "chronomancer",
+        "main_skills": ["Temporal Rift", "Time Freeze", "Inevitable Agony"],
+        "utility_skills": [],
+        "required_keystones": [],
+        "stat_priorities": [
+          "Recuperación de Vida/ES (Damage Recoup)",
+          "Reducción de Cooldowns"
+        ],
+        "synergistic_uniques": []
+      },
+      {
+        "id": "discipula-de-varasha",
+        "name": "Discípula de Varasha Minions",
+        "recommended_ascendancy": "varashas-disciple",
+        "main_skills": ["Mirror Image"],
+        "utility_skills": [],
+        "required_keystones": [],
+        "stat_priorities": [
+          "Daño de Esbirros",
+          "Velocidad de Lanzamiento",
+          "Espíritu para reserva de ilusiones"
+        ],
+        "synergistic_uniques": []
+      }
+    ],
+    "gear_targets": {
+      "ideal_bases": ["Bastones Mágicos (Staves)", "Cetros", "Varita y Foco", "Energy Shield"],
+      "must_have_affixes": ["+Nivel a Gemas de Hechizo/Esbirros", "Daño Elemental", "Escudo de Energía Máximo"]
+    }
+  }
+]

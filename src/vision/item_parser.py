@@ -1,7 +1,7 @@
 """Lógica de análisis para descripciones de objetos extraídas de capturas.
 
 Este módulo convierte el texto bruto del OCR en dataclasses estructuradas
-heredadas de ParsedItem (EquipmentItem, MapItem o GemItem) para separar 
+heredadas de ParsedItem (EquipmentItem, MapItem o GemItem) para separar
 claramente las propiedades de equipamiento, mapas/waystones y gemas.
 """
 
@@ -10,11 +10,6 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
-
-
-# =============================================================================
-# DATA MODELS (JERARQUÍA DE HERENCIA)
-# =============================================================================
 
 @dataclass
 class ParsedItem:
@@ -39,8 +34,8 @@ class MapItem(ParsedItem):
 @dataclass
 class EquipmentItem(ParsedItem):
     """Objeto especializado para Equipamiento (Armas, Armaduras, Joyería)."""
-    base_stats: Dict[str, Any] = field(default_factory=dict)     # Armour, DPS, Energy Shield, Spirit, etc.
-    requirements: Dict[str, int] = field(default_factory=dict)   # Level, Str, Dex, Int
+    base_stats: Dict[str, Any] = field(default_factory=dict)     # Armadura, DPS, Escudo de Energía, Espíritu, etc.
+    requirements: Dict[str, int] = field(default_factory=dict)   # Nivel, Fuerza, Destreza, Inteligencia
     implicit_mods: List[str] = field(default_factory=list)
     explicit_mods: List[str] = field(default_factory=list)
 
@@ -50,11 +45,11 @@ class GemItem(ParsedItem):
     """Objeto especializado para Gemas de Habilidad, Asistencia y Auras/Reservas."""
     gem_level: int = 1
     quality: int = 0
-    spirit_reservation: int = 0                                  # Coste de Espíritu (crucial en PoE2)
+    spirit_reservation: int = 0                                  # Coste de Espíritu en PoE2
     mana_cost: Optional[int] = None
-    tags: List[str] = field(default_factory=list)                # Spell, Melee, AoE, Fire, Support, etc.
-    requirements: Dict[str, int] = field(default_factory=dict)   # Level, Str, Dex, Int
-    description: List[str] = field(default_factory=list)         # Efectos explicito/texto de la gema
+    tags: List[str] = field(default_factory=list)                # Hechizo, Físico , Area, Fuego, Apoyo, etc.
+    requirements: Dict[str, int] = field(default_factory=dict)   # Nivel, Fuerza, Destreza, Inteligencia
+    description: List[str] = field(default_factory=list)         # Efectos explícitos y texto de la gema
 
 
 # =============================================================================

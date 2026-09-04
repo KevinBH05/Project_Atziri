@@ -1,92 +1,80 @@
-# 🎮 AI Gaming Copilot — Path of Exile 2
+# 🎮 Proyecto Atziri (AI Gaming Copilot) — Path of Exile 2
 
-> Asistente contextual e inteligente de IA para videojuegos complejos. Analiza el contexto de juego mediante visión artificial externa y RAG para ofrecer recomendaciones y guías en tiempo real, sin interactuar con la memoria del cliente ni automatizar el gameplay.
+> Asistente contextual e inteligente de IA para Path of Exile 2. Analiza el contexto de juego mediante visión artificial (LLM Vision) y un sistema híbrido de RAG + Tool Calling para ofrecer recomendaciones y guías en tiempo real, sin interactuar con la memoria del cliente.
 
 ![Python](https://img.shields.io/badge/Python-3.10%2B-blue?style=for-the-badge&logo=python)
-![Architecture](https://img.shields.io/badge/Architecture-RAG%20%2B%20CV-orange?style=for-the-badge)
-![Status](https://img.shields.io/badge/Status-In%20Design-yellow?style=for-the-badge)
-![Anti--Ban](https://img.shields.io/badge/Anti--Ban-Safe%20External%20Overlay-brightgreen?style=for-the-badge)
+![Architecture](https://img.shields.io/badge/Architecture-Agentic%20RAG%20%2B%20Tools-orange?style=for-the-badge)
+![Status](https://img.shields.io/badge/Status-In%20Development-yellow?style=for-the-badge)
+![Anti-Ban](https://img.shields.io/badge/Anti--Ban-Safe%20External-brightgreen?style=for-the-badge)
 
 ---
 
 ## 📌 Visión General
 
-**AI Gaming Copilot** nace para resolver la alta barrera de entrada y la sobrecarga de información en ARPGs como **Path of Exile 2**. 
+**Proyecto Atziri** nace para resolver la alta barrera de entrada y la sobrecarga de información en **Path of Exile 2**. 
 
-A diferencia de bots o macros tradicionales, este sistema actúa como un **copiloto inteligente**: observa la pantalla de forma externa, comprende qué está ocurriendo (items, stats, pasivas, jefes) y consulta bases de conocimiento actualizadas para dar consejos precisos en tiempo real mediante un overlay intuitivo.
+A diferencia de bots o macros tradicionales, este sistema actúa como un **copiloto inteligente**: observa tus capturas de pantalla, comprende tu build importando tu Path of Building (PoB), y consulta tanto bases de datos estáticas (gemas, únicos) como el metagame en tiempo real (poe.ninja, YouTube) para dar consejos precisos. Todo ello manteniendo la aplicación local extremadamente ligera.
 
 ### 🛡️ Filosofía Anti-Ban (Safe by Design)
 El proyecto prioriza la seguridad de la cuenta por encima de todo:
 * ❌ **No** lee memoria (`ReadProcessMemory`).
 * ❌ **No** realiza inyección de DLLs ni hooks al proceso del juego.
 * ❌ **No** automatiza entradas de teclado/ratón (sin autoplay).
-* ✅ **100% Externo:** Funciona analizando capturas de pantalla (OCR/Vision) y sirviendo información sobre una interfaz gráfica superpuesta totalmente independiente.
+* ✅ **100% Externo:** Funciona analizando capturas de pantalla de forma pasiva y se alimenta de archivos de texto exportados por el usuario (XML de PoB).
 
 ---
 
-## 🏗️ Arquitectura del Sistema
+## 🏗️ Arquitectura Híbrida del Sistema
 
-```text
+La aplicación separa estrictamente el conocimiento inmutable (guardado en local) del conocimiento volátil (consultado bajo demanda).
+
 +------------------------------------+
-|   Cliente PoE 2 / Juego Target     |
-+------------------------------------+
-                  |
-                  | (Captura de pantalla externa pasiva)
-                  v
-+------------------------------------+
-|  Game Adapter (PoE2 / Multi-game)  |
+|   Input del Jugador (Capturas)     |
 +------------------------------------+
                   |
                   v
-+------------------------------------+
-|        Módulo Vision / OCR         |
-+------------------------------------+
-                  |
-                  | (Stats & Texto de Ítems)
-                  v
 +------------------------------------+       +------------------------------------+
-|       Extractor de Contexto        | <---> | Path of Building (PoB Integration)  |
-+------------------------------------+       +------------------------------------+
-                  |                                  (XML / Base64 / Zlib)
-                  v
-+------------------------------------+       +------------------------------------+
-|      Engine RAG (LlamaIndex)       | <---  |     Data Ingestors Extensibles     |
-+------------------------------------+       +------------------------------------+
-                  |                             (Wikis, PoE Ninja, Community Docs)
-                  v
-+------------------------------------+
-|        LLM (GPT / Gemini)          |
+|  Parseo de Usuario (Contexto)      | <---> | Path of Building (PoB Integration) |
+|  (LLM Vision API + PoB Parser)     |       +------------------------------------+
 +------------------------------------+
                   |
                   v
 +------------------------------------+
-|            Overlay GUI             |
+|      Agente LLM (El Cerebro)       | <---> [ Memoria de Sesión de la Build ]
+|    (Enrutador + Tool Calling)      |
 +------------------------------------+
-```
+       |          |          |
+       v          v          v
++----------+ +----------+ +----------+
+| Base RAG | | APIs Live| | Web/YT   |
+| (Local)  | | (Meta)   | | (Guías)  |
++----------+ +----------+ +----------+
+  Gemas,      poe.ninja,   Maxroll,
+  Únicos,     Precios      Transcripts
+  Pasivas
+
 ---
 
 ## 🛠️ Tech Stack
 
 * **Core & Backend:** Python 3.10+
-* **Arquitectura de Adaptadores:** Diseñado con patrones Factoría/Adaptador para añadir nuevos juegos o fuentes sin reestructurar el motor.
-* **Integración de Terceros:** Parser integrado para Path of Building (PoB XML/Base64 + Zlib) para análisis dinámico de DPS y defensas.
-* **Visión Artificial & OCR:** OpenCV, Tesseract OCR *(YOLO en fases avanzadas)*
-* **Orquestación RAG:** LlamaIndex
-* **Vector DB:** ChromaDB / FAISS
-* **Procesamiento de Vídeos:** `yt-dlp` + OpenAI Whisper
-* **UI / Overlay:** PyQt / DearPyGui (Pendiente de decisión)
+* **Ingesta de Datos Estáticos:** Playwright, BeautifulSoup (Extracción JIT a JSON).
+* **Visión Artificial:** LLM Vision API (sustituyendo a OCR tradicional para mayor precisión semántica).
+* **Integración de Terceros:** Parser integrado para Path of Building (PoB XML/JSON) para análisis dinámico del estado del jugador.
+* **Base de Datos Vectorial:** ChromaDB (Indexado en local súper ligero mediante *embeddings*).
+* **Orquestación RAG y Agentes:** LangChain / LlamaIndex (Para enrutamiento de *Tool Calling*).
+* **Procesamiento Dinámico (Zero-Bloat):** `youtube-transcript-api` (extracciones de guías al vuelo sin descargas de vídeo) + API requests (poe.ninja).
+* **UI:** Gradio / Streamlit / Discord Bot (Pendiente de decisión).
 
 ---
 
 ## 🚀 Roadmap de Desarrollo
 
-- [ ] **Fase 1: MVP Básico** — Captura manual, integración con LLM y respuestas contextuales simples.
-- [ ] **Fase 2: Motor OCR** — Detección automática de texto en pantalla y extracción de stats de items.
-- [ ] **Fase 3: Pipeline RAG** — Indexado de wikis, base de datos de items y guías actualizadas del meta.
-- [ ] **Fase 4: Build Fingerprinting** — Detección automática de arquetipos, gemas y pasivas del personaje.
-- [ ] **Fase 5: Ingesta de Vídeo** — Transcripción e indexado de guías de YouTube mediante embeddings.
-- [ ] **Fase 6: Overlay In-Game** — Interfaz flotante externa para lectura cómoda en partida.
-- [ ] **Fase 7: Memoria Persistente** — Seguimiento del progreso del personaje a lo largo del tiempo.
+- [ ] **Fase 1: Base de Conocimiento Estática (RAG)** — Vectorización unificada de Gemas, Objetos Únicos y Mecánicas en ChromaDB. *(En progreso)*
+- [x] **Fase 2: Conectores de Usuario** — Parser de XML de Path of Building y análisis de capturas de pantalla integrados.
+- [ ] **Fase 3: Inteligencia Dinámica (APIs)** — Herramientas en tiempo real (*Tool Calling*) para poe.ninja, YouTube y Maxroll (Just-In-Time, sin saturar el almacenamiento local).
+- [ ] **Fase 4: Cerebro del Agente** — Orquestación del LLM para decidir de forma autónoma cuándo buscar en local, cuándo llamar a una API y cómo mantener el contexto/memoria de la sesión.
+- [ ] **Fase 5: Interfaz de Usuario (UI)** — Implementación del frontend amigable para la interacción final con el jugador.
 
 ---
 
