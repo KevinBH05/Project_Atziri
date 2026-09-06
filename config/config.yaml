@@ -17,13 +17,15 @@ game:
     - "PathofExile"
 
 # ---------------------------------------------------------------------
-# Módulo de Visión Artificial (Multimodal API)
+# Módulo de Captura y Visión Local (OCR + OpenCV)
 # ---------------------------------------------------------------------
 vision:
   enabled: true
-  multimodal_provider: "gemini"  # Procesa capturas directamente vía API Vision
-  image_detail_level: "high"
-  max_image_dimension: 1024     # Redimensionamiento ligero pre-envío para optimizar latencia
+  mode: "local_ocr"            # Alineado con la arquitectura OCR determinista
+  engine: "tesseract"          # O easyocr
+  clahe_clip_limit: 2.0
+  clahe_tile_grid_size: [8, 8]
+  scale_factor: 2.0
 
 # ---------------------------------------------------------------------
 # Integración de Contexto de Usuario (Path of Building)
@@ -40,7 +42,7 @@ rag:
   vector_store: "chroma"
   chroma_persist_dir: "./data/vector_store/chroma"
   collection_name: "atziri_kb"
-  embedding_model: "all-MiniLM-L6-v2"  # Modelo de embeddings local súper ligero
+  embedding_model: "all-MiniLM-L6-v2"  # Modelo estático ligero en RAM
   top_k_results: 4
 
 # ---------------------------------------------------------------------
@@ -55,16 +57,16 @@ tools:
     max_results: 3
 
 # ---------------------------------------------------------------------
-# Proveedor de Inteligencia Artificial (LLM & Agente)
+# Proveedor de Inteligencia Artificial (LLM)
 # ---------------------------------------------------------------------
 llm:
   provider: "gemini"
-  model_name: "gemini-2.5-flash"
+  model_name: "gemini-2.0-flash"  # Optimizado para inferencia y razonamiento rápido
   temperature: 0.2
   max_tokens: 800
 
 # ---------------------------------------------------------------------
-# Interfaz de Usuario
+# Interfaz de Usuario (Overlay PyQt6)
 # ---------------------------------------------------------------------
 ui:
   framework: "pyqt6"

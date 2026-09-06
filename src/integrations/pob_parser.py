@@ -7,17 +7,15 @@ para garantizar interoperabilidad directa con el motor de OCR y recomendaciones.
 from __future__ import annotations
 
 import base64
+import json
 import xml.etree.ElementTree as ET
 import zlib
-import json
-from datetime import datetime
 from dataclasses import dataclass, field
+from datetime import datetime, timezone
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Tuple
 
-from opentelemetry import context
-
-from vision.item_parser import EquipmentItem, GemItem, ItemParser
+from src.vision.item_parser import EquipmentItem, GemItem, ItemParser
 
 
 # =============================================================================
@@ -26,31 +24,23 @@ from vision.item_parser import EquipmentItem, GemItem, ItemParser
 
 @dataclass
 class PassiveTreeData:
-    """Representa el estado del árbol de pasivas y su mapa global de conocimiento."""
+    """Representa el estado del árbol de pasivas del personaje en PoB."""
     unallocated_points: int = 0
     allocated_node_ids: List[int] = field(default_factory=list)
-    active_keystones: List[str] = field(default_factory=list)
-    active_notables: List[str] = field(default_factory=list)
-    
-    # Datos para evaluación de recomendaciones
-    adjacent_node_ids: List[int] = field(default_factory=list)      # Frontera a 1-2 pasos
-    all_keystones: Dict[str, int] = field(default_factory=dict)     # Mapa {Nombre_Keystone: node_id}
-    all_notables: Dict[str, int] = field(default_factory=dict)      # Mapa {Nombre_Notable: node_id}
 
 
 @dataclass
 class SkillGroup:
-    """Grupo de gemas (Principal, Auras/Reservas o Utilidad)."""
-    label: str
+    """Grupo de gemas (Skill Group en el XML de PoB)."""
+    label: str = ""
     is_main: bool = False
-    is_active_auras: bool = False
     gems: List[GemItem] = field(default_factory=list)
 
 
 @dataclass
 class PoBStats:
-    """Estadísticas agregadas del personaje calculadas por PoB."""
-    # Daño y Métricas de Combate
+    """Estadísticas agregadas del personaje extraídas directamente de PoB."""
+    # DPS y Ataque/Hechizo
     combined_dps: float = 0.0
     hit_dps: float = 0.0
     poison_dps: float = 0.0
@@ -58,14 +48,14 @@ class PoBStats:
     average_damage: float = 0.0
     attack_cast_rate: float = 0.0
 
-    # Recursos
+    # Recursos (Vida, Maná y Espíritu para PoB2)
     life: float = 0.0
     mana: float = 0.0
     spirit_total: float = 0.0
     spirit_reserved: float = 0.0
     spirit_unreserved: float = 0.0
 
-    # Defensas
+    # Defensas principales
     armour: float = 0.0
     evasion: float = 0.0
     energy_shield: float = 0.0
@@ -76,7 +66,7 @@ class PoBStats:
     lightning_resistance: float = 0.0
     chaos_resistance: float = 0.0
 
-    # Atributos actuales y requeridos
+    # Atributos y Requisitos
     strength: float = 0.0
     dexterity: float = 0.0
     intelligence: float = 0.0
@@ -90,11 +80,12 @@ class PoBBuild:
     """Representa un build completo de PoB2 con modelos compartidos."""
     character_name: str
     character_class: str
+    ascendancy_name: str
     level: int
     main_skill_name: str
     stats: PoBStats
     passive_tree: PassiveTreeData
-    equipped_items: Dict[str, EquipmentItem] = field(default_factory=dict)  # Clave: nombre del espacio
+    equipped_items: Dict[str, EquipmentItem] = field(default_factory=dict)
     skill_groups: List[SkillGroup] = field(default_factory=list)
 
 
@@ -115,17 +106,24 @@ class PoBLoader:
 
     @staticmethod
     def _looks_like_encoded_payload(value: str) -> bool:
-        return bool(value) and len(value) > 20 and all(ch.isalnum() or ch in "=+/\r\n" for ch in value)
+        return bool(value) and len(value) > 20 and all(ch.isalnum() or ch in "=+/\r\n-_" for ch in value)
 
     @staticmethod
     def decode_base64_zlib(payload: str) -> ET.Element:
         if not payload or not isinstance(payload, str):
             raise ValueError("La cadena de entrada está vacía o no es válida.")
 
-        clean_payload = payload.strip().replace("\r", "").replace("\n", "")
+        # Limpiar espacios y normalizar caracteres base64 URL-safe
+        clean_payload = (
+            payload.strip()
+            .replace("\r", "")
+            .replace("\n", "")
+            .replace("-", "+")
+            .replace("_", "/")
+        )
 
         try:
-            compressed = base64.b64decode(clean_payload, validate=True)
+            compressed = base64.b64decode(clean_payload)
         except Exception as exc:
             raise ValueError("La cadena Base64 de PoB es inválida o está corrupta.") from exc
 
@@ -171,10 +169,6 @@ class PoBLoader:
         except (TypeError, ValueError):
             return default
 
-    # -------------------------------------------------------------------------
-    # Extracción de Datos
-    # -------------------------------------------------------------------------
-
     def _extract_player_stats(self, root: ET.Element) -> PoBStats:
         stats = PoBStats()
         raw_stats: Dict[str, float] = {}
@@ -185,46 +179,71 @@ class PoBLoader:
             if stat_name and val is not None:
                 raw_stats[stat_name] = self._safe_float(val)
 
-        # Captura de métricas de daño avanzadas
-        stats.combined_dps = (
-            raw_stats.get("Total DPS per Poison")
-            or raw_stats.get("CombinedDPS")
-            or raw_stats.get("TotalDPS")
-            or 0.0
+        # DPS y Ataque/Hechizo
+        stats.combined_dps = next(
+            (raw_stats[k] for k in ("CombinedDPS", "TotalDPS", "Total DPS per Poison") if k in raw_stats),
+            0.0
         )
-        stats.hit_dps = raw_stats.get("Hit DPS") or raw_stats.get("MainHandDPS") or 0.0
-        stats.poison_dps = raw_stats.get("Poison DPS", 0.0)
-        stats.dot_dps = raw_stats.get("Total DoT DPS", 0.0)
-        stats.average_damage = raw_stats.get("Average Damage") or raw_stats.get("AverageHit") or 0.0
-        stats.attack_cast_rate = raw_stats.get("Attack/Cast Rate") or raw_stats.get("Speed") or 0.0
+        stats.hit_dps = next(
+            (raw_stats[k] for k in ("HitDPS", "WithHitDPS", "Hit DPS", "MainHandDPS") if k in raw_stats),
+            0.0
+        )
+        stats.poison_dps = next(
+            (raw_stats[k] for k in ("PoisonDPS", "TotalPoisonDPS", "Poison DPS") if k in raw_stats),
+            0.0
+        )
+        stats.dot_dps = next(
+            (raw_stats[k] for k in ("TotalDot", "TotalDotDPS", "Total DoT DPS") if k in raw_stats),
+            0.0
+        )
+        stats.average_damage = next(
+            (raw_stats[k] for k in ("AverageDamage", "AverageHit", "Average Damage") if k in raw_stats),
+            0.0
+        )
+        stats.attack_cast_rate = next(
+            (raw_stats[k] for k in ("Speed", "Attack/Cast Rate") if k in raw_stats),
+            0.0
+        )
 
-        # Resto de extracciones (Vida, Maná, Resistencias...)
+        # Recursos
         stats.life = raw_stats.get("Life", 0.0)
         stats.mana = raw_stats.get("Mana", 0.0)
+        stats.spirit_total = raw_stats.get("Spirit", 0.0)
+        stats.spirit_reserved = raw_stats.get("SpiritReserved", 0.0)
+        stats.spirit_unreserved = raw_stats.get(
+            "SpiritUnreserved", 
+            max(0.0, stats.spirit_total - stats.spirit_reserved)
+        )
+
+        # Defensas
         stats.armour = raw_stats.get("Armour", 0.0)
         stats.evasion = raw_stats.get("Evasion", 0.0)
         stats.energy_shield = raw_stats.get("EnergyShield", 0.0)
-        
+
+        # Resistencias
         stats.fire_resistance = raw_stats.get("FireResist", 0.0)
         stats.cold_resistance = raw_stats.get("ColdResist", 0.0)
         stats.lightning_resistance = raw_stats.get("LightningResist", 0.0)
         stats.chaos_resistance = raw_stats.get("ChaosResist", 0.0)
 
-        stats.strength = raw_stats.get("Strength", 0.0)
-        stats.dexterity = raw_stats.get("Dexterity", 0.0)
-        stats.intelligence = raw_stats.get("Intelligence", 0.0)
+        # Atributos y Requisitos (PoB usa Str, Dex, Int)
+        stats.strength = raw_stats.get("Str", raw_stats.get("Strength", 0.0))
+        stats.dexterity = raw_stats.get("Dex", raw_stats.get("Dexterity", 0.0))
+        stats.intelligence = raw_stats.get("Int", raw_stats.get("Intelligence", 0.0))
+        stats.req_strength = raw_stats.get("ReqStr", 0.0)
+        stats.req_dexterity = raw_stats.get("ReqDex", 0.0)
+        stats.req_intelligence = raw_stats.get("ReqInt", 0.0)
 
         return stats
 
     def _extract_equipped_items(self, root: ET.Element) -> Dict[str, EquipmentItem]:
-        """Extrae y convierte el XML de ítems de PoB directamente a instancias de EquipmentItem."""
         equipped: Dict[str, EquipmentItem] = {}
         items_root = root.find(".//Items")
         if items_root is None:
             return equipped
 
+        # 1. Parsear todos los ítems por su ID
         parsed_items_by_id: Dict[str, EquipmentItem] = {}
-
         for item_elem in items_root.findall("Item"):
             item_id = item_elem.attrib.get("id")
             raw_text = (item_elem.text or "").strip()
@@ -235,7 +254,21 @@ class PoBLoader:
             if isinstance(parsed, EquipmentItem):
                 parsed_items_by_id[item_id] = parsed
 
-        for slot_elem in items_root.findall("Slot"):
+        # 2. Localizar el ItemSet activo
+        active_set_id = items_root.attrib.get("activeItemSet", "1")
+        target_item_set = None
+
+        for item_set in items_root.findall("ItemSet"):
+            if item_set.attrib.get("id") == active_set_id:
+                target_item_set = item_set
+                break
+
+        # Si no se encuentra el ID activo, fallback al primer ItemSet o al propio items_root
+        if target_item_set is None:
+            target_item_set = items_root.find("ItemSet") or items_root
+
+        # 3. Mapear los slots del set activo
+        for slot_elem in target_item_set.findall("Slot"):
             slot_name = slot_elem.attrib.get("name")
             item_id = slot_elem.attrib.get("itemId")
             if slot_name and item_id and item_id in parsed_items_by_id:
@@ -244,57 +277,67 @@ class PoBLoader:
         return equipped
 
     def _extract_passive_tree(self, root: ET.Element) -> PassiveTreeData:
-        """Extrae los nodos asignados, puntos pendientes y directorio global de pasivas."""
         tree_data = PassiveTreeData()
         tree_node = root.find(".//Tree")
         if tree_node is None:
             return tree_data
 
-        spec = tree_node.find("Spec")
+        # Buscar el Spec activo (o el primero disponible)
+        active_spec_id = tree_node.attrib.get("activeSpec", "1")
+        spec = None
+        
+        for s in tree_node.findall("Spec"):
+            if s.attrib.get("id") == active_spec_id:
+                spec = s
+                break
+                
+        if spec is None:
+            spec = tree_node.find("Spec")
+
         if spec is not None:
+            # Puntos sin asignar
             tree_data.unallocated_points = self._safe_int(spec.attrib.get("pointsUnused"), 0)
             
-            # IDs de nodos asignados en PoB
+            # Nodos asignados
             nodes_attr = spec.attrib.get("nodes", "")
             if nodes_attr:
                 tree_data.allocated_node_ids = [
                     int(n) for n in nodes_attr.split(",") if n.strip().isdigit()
                 ]
 
-        # Parseo de Keystones / Notables del XML global si existen
-        for node in tree_node.findall(".//EditedNodes/Node"):
-            name = node.attrib.get("name", "")
-            node_id = self._safe_int(node.attrib.get("id"))
-            is_ks = node.attrib.get("isKeystone") == "true"
-            is_notable = node.attrib.get("isNotable") == "true"
-
-            if is_ks and name:
-                tree_data.all_keystones[name] = node_id
-                if node_id in tree_data.allocated_node_ids:
-                    tree_data.active_keystones.append(name)
-            elif is_notable and name:
-                tree_data.all_notables[name] = node_id
-                if node_id in tree_data.allocated_node_ids:
-                    tree_data.active_notables.append(name)
-
         return tree_data
 
     def _extract_skill_groups(self, root: ET.Element) -> Tuple[str, List[SkillGroup]]:
-        """Extrae todos los grupos de gemas (principales, auras, utilidad) convertidos a GemItem."""
         skills_root = root.find(".//Skills")
         if skills_root is None:
             return "Unknown Skill", []
 
+        # 1. Localizar el SkillSet activo
+        active_set_id = skills_root.attrib.get("mainActiveSkillSet", "1")
+        target_skill_set = None
+
+        for skill_set in skills_root.findall("SkillSet"):
+            if skill_set.attrib.get("id") == active_set_id:
+                target_skill_set = skill_set
+                break
+
+        if target_skill_set is None:
+            target_skill_set = skills_root.find("SkillSet") or skills_root
+
+        # Determinar cuál es el grupo principal activo global
+        main_group_index = self._safe_int(target_skill_set.attrib.get("mainActiveSkill"), 1)
+
         groups: List[SkillGroup] = []
         main_skill_name = "Unknown Skill"
 
-        for skill_elem in skills_root.findall("Skill"):
+        # 2. Iterar sobre los grupos <Skill>
+        for idx, skill_elem in enumerate(target_skill_set.findall("Skill"), start=1):
             is_enabled = skill_elem.attrib.get("enabled") != "false"
             if not is_enabled:
                 continue
 
-            label = skill_elem.attrib.get("label") or "Skill Group"
-            is_main = skill_elem.attrib.get("mainActiveSkill") is not None
+            # Si coincide con el índice principal o tiene el flag
+            is_main = (idx == main_group_index) or (skill_elem.attrib.get("mainActiveSkill") == "1")
             gems: List[GemItem] = []
 
             for gem_elem in skill_elem.findall("Gem"):
@@ -307,6 +350,8 @@ class PoBLoader:
                 quality = self._safe_int(gem_elem.attrib.get("quality"), 0)
                 spirit = self._safe_int(gem_elem.attrib.get("spiritReservation"), 0)
 
+                is_support = gem_elem.attrib.get("support") == "true" or "support" in name.lower()
+
                 tags_attr = (
                     gem_elem.attrib.get("tags")
                     or gem_elem.attrib.get("types")
@@ -317,7 +362,7 @@ class PoBLoader:
 
                 gem_item = GemItem(
                     name=name,
-                    item_class="Support Gem" if "support" in name.lower() else "Skill Gem",
+                    item_class="Support Gem" if is_support else "Skill Gem",
                     rarity="Gem",
                     item_level=None,
                     raw_text=f"{name} (Lvl {gem_level})",
@@ -329,34 +374,42 @@ class PoBLoader:
                 gems.append(gem_item)
 
             if gems:
-                is_auras = any(g.spirit_reservation > 0 for g in gems)
-                group = SkillGroup(label=label, is_main=is_main, is_active_auras=is_auras, gems=gems)
+                # Asignar etiqueta o usar el nombre de la primera gema si no hay label
+                label = skill_elem.attrib.get("label") or gems[0].name
+                
+                # Instanciar el SkillGroup (sin el parámetro is_active_auras)
+                group = SkillGroup(label=label, is_main=is_main, gems=gems)
                 groups.append(group)
 
+                # Extraer el nombre de la habilidad principal (la primera gema activa que no sea support)
                 if is_main and main_skill_name == "Unknown Skill":
-                    main_skill_name = gems[0].name
+                    active_gem = next((g for g in gems if g.item_class != "Support Gem"), gems[0])
+                    main_skill_name = active_gem.name
 
+        # Fallback si no se encontró la main skill implícita
         if main_skill_name == "Unknown Skill" and groups and groups[0].gems:
             main_skill_name = groups[0].gems[0].name
 
         return main_skill_name, groups
 
-    def _extract_character_details(self, root: ET.Element) -> Tuple[str, str, int]:
+    def _extract_character_details(self, root: ET.Element) -> Tuple[str, str, str, int]:
         build_node = root.find(".//Build")
         if build_node is not None:
-            name = build_node.attrib.get("targetVersion") or root.attrib.get("name") or "Build PoB2"
+            # Priorizar el atributo 'name' de <Build> o de la raíz <PathOfBuilding>
+            name = build_node.attrib.get("name") or root.attrib.get("name") or "Build PoB2"
             character_class = build_node.attrib.get("className") or "Unknown"
+            ascendancy = build_node.attrib.get("ascendClassName") or ""
             level = self._safe_int(build_node.attrib.get("level"), 0)
-            return name, character_class, level
+            return name, character_class, ascendancy, level
 
-        return "Build PoB2", "Unknown", 0
+        return "Build PoB2", "Unknown", "", 0
 
     def load_build(self) -> PoBBuild:
         root = self._load_xml_from_source()
         if root is None or root.tag is None:
             raise ValueError("El XML de PoB está vacío o no se pudo cargar.")
 
-        name, character_class, level = self._extract_character_details(root)
+        name, character_class, ascendancy, level = self._extract_character_details(root)
         stats = self._extract_player_stats(root)
         equipped_items = self._extract_equipped_items(root)
         passive_tree = self._extract_passive_tree(root)
@@ -365,6 +418,7 @@ class PoBLoader:
         return PoBBuild(
             character_name=name,
             character_class=character_class,
+            ascendancy_name=ascendancy,
             level=level,
             main_skill_name=main_skill_name,
             stats=stats,
@@ -375,64 +429,44 @@ class PoBLoader:
 
 
 class PoBParser(PoBLoader):
-    """Alias compatible."""
+    """Parser principal compatible con integración de contexto de usuario."""
 
     def parse(self, payload: str | Path) -> PoBBuild:
         return PoBLoader(payload).load_build()
 
-def update_user_context_file(self, context_json_path: str | Path, source_payload: str | Path) -> dict:
-    """Parsea el PoB y actualiza automáticamente la sección pobb_data del user_context."""
-    build = self.parse(source_payload)
-    path = Path(context_json_path)
-    
-    if path.exists():
-        with open(path, "r", encoding="utf-8") as f:
-            context = json.load(f)
-    else:
+    def update_user_context(self, context_json_path: str | Path, source_payload: str | Path) -> Tuple[PoBBuild, dict]:
+        """
+        Parsea la build de PoB2, actualiza las preferencias no volátiles en disco 
+        y devuelve la instancia completa PoBBuild para el ContextManager en RAM.
+        """
+        build = self.parse(source_payload)
+        path = Path(context_json_path)
+
         context = {}
+        if path.exists():
+            try:
+                with open(path, "r", encoding="utf-8") as f:
+                    context = json.load(f)
+            except json.JSONDecodeError:
+                context = {}
 
-    context["character_name"] = build.character_name
-    context["pob_link"] = str(source_payload) if not isinstance(source_payload, Path) else ""
-    
-    context["pob_data"] = {
-        "last_parsed": datetime.utcnow().isoformat(),
-        "level": build.level,
-        "class": build.character_class,
-        "ascendancy": "", 
-        "main_skill": build.main_skill_name,
-        "stats": {
-            "combined_dps": build.stats.combined_dps,
-            "hit_dps": build.stats.hit_dps,
-            "poison_dps": build.stats.poison_dps,
-            "dot_dps": build.stats.dot_dps,
-            "average_damage": build.stats.average_damage,
-            "attack_cast_rate": build.stats.attack_cast_rate,
-            "life": build.stats.life,
-            "mana": build.stats.mana,
-            "armour": build.stats.armour,
-            "evasion": build.stats.evasion,
-            "energy_shield": build.stats.energy_shield,
-            "resistances": {
-                "fire": build.stats.fire_resistance,
-                "cold": build.stats.cold_resistance,
-                "lightning": build.stats.lightning_resistance,
-                "chaos": build.stats.chaos_resistance
-            },
-            "attributes": {
-                "strength": build.stats.strength,
-                "dexterity": build.stats.dexterity,
-                "intelligence": build.stats.intelligence
-            }
-        },
-        "active_keystones": build.passive_tree.active_keystones,
-        "active_notables": build.passive_tree.active_notables,
-        "equipped_slots": list(build.equipped_items.keys())
-    }
-    
-    with open(path, "w", encoding="utf-8") as f:
-        json.dump(context, f, indent=2, ensure_ascii=False)
+        # Actualizar únicamente la configuración no volátil
+        context["character_name"] = build.character_name
+        context["character_class"] = build.character_class
+        context["ascendancy"] = build.ascendancy_name
+        context["level"] = build.level
         
-    return context
+        if isinstance(source_payload, str) and self._looks_like_encoded_payload(source_payload):
+            context["pob_link"] = source_payload
 
-# Asignar el método a la clase existente
-PoBParser.update_user_context = update_user_context_file
+        # Metadata de sincronización
+        context["last_updated"] = datetime.now(timezone.utc).isoformat()
+
+        # Escritura atómica a disco para persistencia estricta de preferencias
+        temp_path = path.with_suffix(".tmp")
+        with open(temp_path, "w", encoding="utf-8") as f:
+            json.dump(context, f, indent=2, ensure_ascii=False)
+        temp_path.replace(path)
+
+        # Devolvemos la build viva (para RAM) y el contexto persistido
+        return build, context

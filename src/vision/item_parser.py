@@ -11,19 +11,29 @@ import re
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
 
+from dataclasses import dataclass, field
+from typing import Any, Dict, List, Optional, Tuple
+
+
 @dataclass
 class ParsedItem:
-    """Clase base para cualquier objeto parseado desde el OCR."""
+    """Clase base estricta para cualquier objeto detectado por el OCR."""
     name: str
     item_class: Optional[str]
     rarity: str
     item_level: Optional[int]
     raw_text: str
 
+    def __post_init__(self) -> None:
+        """Saneamiento ligero de strings para evitar errores de comparación."""
+        self.name = self.name.strip() if self.name else "Unknown Item"
+        self.rarity = self.rarity.upper().strip() if self.rarity else "NORMAL"
+        self.raw_text = self.raw_text or ""
+
 
 @dataclass
 class MapItem(ParsedItem):
-    """Objeto especializado para Mapas y Waystones."""
+    """Objeto especializado para Mapas y Waystones en PoE 2."""
     map_tier: Optional[int] = None
     quantity: Optional[int] = None
     rarity_stat: Optional[int] = None
@@ -45,9 +55,9 @@ class GemItem(ParsedItem):
     """Objeto especializado para Gemas de Habilidad, Asistencia y Auras/Reservas."""
     gem_level: int = 1
     quality: int = 0
-    spirit_reservation: int = 0                                  # Coste de Espíritu en PoE2
+    spirit_reservation: int = 0                                  # Coste de Espíritu específico de PoE 2
     mana_cost: Optional[int] = None
-    tags: List[str] = field(default_factory=list)                # Hechizo, Físico , Area, Fuego, Apoyo, etc.
+    tags: List[str] = field(default_factory=list)                # Hechizo, Físico, Área, Fuego, Apoyo, etc.
     requirements: Dict[str, int] = field(default_factory=dict)   # Nivel, Fuerza, Destreza, Inteligencia
     description: List[str] = field(default_factory=list)         # Efectos explícitos y texto de la gema
 
@@ -60,62 +70,74 @@ class ItemParser:
     """Convierte el texto OCR en una lista de instancias de EquipmentItem, MapItem o GemItem."""
 
     def __init__(self) -> None:
+        # Tolerancia a espacios iniciales opcionales y variaciones de caracteres OCR
         self._patterns = {
-            "item_class": re.compile(r"^Item Class\s*:\s*(?P<value>[^\n]+)", re.IGNORECASE | re.MULTILINE),
-            "rarity": re.compile(r"^Rarity\s*:\s*(?P<value>[^\n]+)", re.IGNORECASE | re.MULTILINE),
-            "item_level": re.compile(r"^(?:Item Level|iLvl)\s*:\s*(?P<value>\d+)", re.IGNORECASE | re.MULTILINE),
+            "item_class": re.compile(r"^\s*Item Class\s*:\s*(?P<value>[^\n]+)", re.IGNORECASE | re.MULTILINE),
+            "rarity": re.compile(r"^\s*Rarity\s*:\s*(?P<value>[^\n]+)", re.IGNORECASE | re.MULTILINE),
+            "item_level": re.compile(r"^\s*(?:Item Level|iLvl)\s*:\s*(?P<value>\d+)", re.IGNORECASE | re.MULTILINE),
             
-            # Metadatos de Mapas / Waystones
-            "map_tier": re.compile(r"^(?:Map Tier|Waystone Tier)\s*:\s*(?P<value>\d+)", re.IGNORECASE | re.MULTILINE),
-            "item_quantity": re.compile(r"^Item Quantity\s*:\s*\+?(?P<value>\d+)%", re.IGNORECASE | re.MULTILINE),
-            "item_rarity": re.compile(r"^Item Rarity\s*:\s*\+?(?P<value>\d+)%", re.IGNORECASE | re.MULTILINE),
-            "pack_size": re.compile(r"^Monster Pack Size\s*:\s*\+?(?P<value>\d+)%", re.IGNORECASE | re.MULTILINE),
+            # Waystones / Mapas
+            "map_tier": re.compile(r"^\s*(?:Map Tier|Waystone Tier)\s*:\s*(?P<value>\d+)", re.IGNORECASE | re.MULTILINE),
+            "item_quantity": re.compile(r"^\s*Item Quantity\s*:\s*\+?(?P<value>\d+)%", re.IGNORECASE | re.MULTILINE),
+            "item_rarity": re.compile(r"^\s*Item Rarity\s*:\s*\+?(?P<value>\d+)%", re.IGNORECASE | re.MULTILINE),
+            "pack_size": re.compile(r"^\s*Monster Pack Size\s*:\s*\+?(?P<value>\d+)%", re.IGNORECASE | re.MULTILINE),
             
-            # Requisitos comunes
-            "req_level": re.compile(r"^Requires Level\s+(?P<value>\d+)", re.IGNORECASE | re.MULTILINE),
-            "req_str": re.compile(r"^(?:Str|Strength)\s+(?P<value>\d+)", re.IGNORECASE | re.MULTILINE),
-            "req_dex": re.compile(r"^(?:Dex|Dexterity)\s+(?P<value>\d+)", re.IGNORECASE | re.MULTILINE),
-            "req_int": re.compile(r"^(?:Int|Intelligence)\s+(?P<value>\d+)", re.IGNORECASE | re.MULTILINE),
+            # Requisitos (Permite búsqueda en cualquier parte de la línea, no solo al inicio)
+            "req_level": re.compile(r"Requires Level\s+(?P<value>\d+)", re.IGNORECASE),
+            "req_str": re.compile(r"(?:Str|Strength)\s+(?P<value>\d+)", re.IGNORECASE),
+            "req_dex": re.compile(r"(?:Dex|Dexterity)\s+(?P<value>\d+)", re.IGNORECASE),
+            "req_int": re.compile(r"(?:Int|Intelligence)\s+(?P<value>\d+)", re.IGNORECASE),
             
-            # Base Stats de Equipamiento
-            "phys_damage": re.compile(r"^Physical Damage\s*:\s*(?P<value>[\d\-]+)", re.IGNORECASE | re.MULTILINE),
-            "armour": re.compile(r"^Armour\s*:\s*(?P<value>\d+)", re.IGNORECASE | re.MULTILINE),
-            "evasion": re.compile(r"^Evasion Rating\s*:\s*(?P<value>\d+)", re.IGNORECASE | re.MULTILINE),
-            "energy_shield": re.compile(r"^Energy Shield\s*:\s*(?P<value>\d+)", re.IGNORECASE | re.MULTILINE),
-            "spirit": re.compile(r"^Spirit\s*:\s*(?P<value>\d+)", re.IGNORECASE | re.MULTILINE),
+            # Base Stats (Soporta múltiples tipos de guion en rangos de daño)
+            "phys_damage": re.compile(r"^\s*Physical Damage\s*:\s*(?P<value>[\d\-\–\—\s]+)", re.IGNORECASE | re.MULTILINE),
+            "armour": re.compile(r"^\s*Armour\s*:\s*(?P<value>\d+)", re.IGNORECASE | re.MULTILINE),
+            "evasion": re.compile(r"^\s*Evasion Rating\s*:\s*(?P<value>\d+)", re.IGNORECASE | re.MULTILINE),
+            "energy_shield": re.compile(r"^\s*Energy Shield\s*:\s*(?P<value>\d+)", re.IGNORECASE | re.MULTILINE),
+            "spirit": re.compile(r"^\s*Spirit\s*:\s*(?P<value>\d+)", re.IGNORECASE | re.MULTILINE),
             
-            # Específicos de Gemas
-            "gem_level": re.compile(r"^Level\s*:\s*(?P<value>\d+)", re.IGNORECASE | re.MULTILINE),
-            "quality": re.compile(r"^Quality\s*:\s*\+?(?P<value>\d+)%", re.IGNORECASE | re.MULTILINE),
-            "spirit_reservation": re.compile(r"^(?:Spirit Reserved|Reserved Spirit|Spirit Cost)\s*:\s*(?P<value>\d+)", re.IGNORECASE | re.MULTILINE),
-            "mana_cost": re.compile(r"^(?:Mana Cost|Mana Reserved)\s*:\s*(?P<value>\d+)", re.IGNORECASE | re.MULTILINE),
+            # Gemas
+            "gem_level": re.compile(r"^\s*Level\s*:\s*(?P<value>\d+)", re.IGNORECASE | re.MULTILINE),
+            "quality": re.compile(r"^\s*Quality\s*:\s*\+?(?P<value>\d+)%", re.IGNORECASE | re.MULTILINE),
+            "spirit_reservation": re.compile(r"^\s*(?:Spirit Reserved|Reserved Spirit|Spirit Cost)\s*:\s*(?P<value>\d+)", re.IGNORECASE | re.MULTILINE),
+            "mana_cost": re.compile(r"^\s*(?:Mana Cost|Mana Reserved)\s*:\s*(?P<value>\d+)", re.IGNORECASE | re.MULTILINE),
         }
 
+        # La lista de cabeceras se usa para limpiar metadatos y aislar los modificadores (affixes)
         self._metadata_headers = [
-            r"^Rarity:", r"^Item Class:", r"^Item Level:", r"^iLvl:", r"^Map Tier:",
-            r"^Waystone Tier:", r"^Quality:", r"^Requirements:", r"^Requires",
-            r"^Physical Damage:", r"^Elemental Damage:", r"^Chaos Damage:",
-            r"^Critical Strike Chance:", r"^Attacks per Second:", r"^Armour:",
-            r"^Evasion Rating:", r"^Energy Shield:", r"^Block Chance:", r"^Spirit:",
-            r"^Spirit Reserved:", r"^Item Quantity:", r"^Item Rarity:", r"^Monster Pack Size:",
-            r"^Sockets:", r"^Level:", r"^Unidentified$", r"^Corrupted$", r"^Mirrored$",
-            r"^Str\s+\d+", r"^Dex\s+\d+", r"^Int\s+\d+"
+            r"^\s*Rarity:", r"^\s*Item Class:", r"^\s*Item Level:", r"^\s*iLvl:", r"^\s*Map Tier:",
+            r"^\s*Waystone Tier:", r"^\s*Quality:", r"^\s*Requirements:", r"^\s*Requires",
+            r"^\s*Physical Damage:", r"^\s*Elemental Damage:", r"^\s*Chaos Damage:",
+            r"^\s*Critical Strike Chance:", r"^\s*Attacks per Second:", r"^\s*Armour:",
+            r"^\s*Evasion Rating:", r"^\s*Energy Shield:", r"^\s*Block Chance:", r"^\s*Spirit:",
+            r"^\s*Spirit Reserved:", r"^\s*Item Quantity:", r"^\s*Item Rarity:", r"^\s*Monster Pack Size:",
+            r"^\s*Sockets:", r"^\s*Level:", r"^\s*Unidentified$", r"^\s*Corrupted$", r"^\s*Mirrored$",
+            r"Str\s+\d+", r"Dex\s+\d+", r"Int\s+\d+"
         ]
+
+    from typing import List
 
     def parse_text(self, text: str) -> List[ParsedItem]:
         """Punto de entrada principal: analiza el texto OCR y devuelve una lista de ParsedItem."""
+        if not text or not text.strip():
+            return []
+
         blocks = self._split_into_item_blocks(text)
         items: List[ParsedItem] = []
 
         for block in blocks:
-            parsed = self.parse_single_item(block)
-            if parsed:
-                items.append(parsed)
+            try:
+                parsed = self.parse_single_item(block)
+                if parsed:
+                    items.append(parsed)
+            except Exception as e:
+                # Captura fallos en un bloque concreto sin interrumpir la lista completa
+                # Ideal para loguear el bloque problemático en desarrollo
+                continue
 
         return items
 
     def parse_single_item(self, text: str) -> Optional[ParsedItem]:
-        """Analiza un bloque de texto correspondiente a un único objeto."""
+        """Analiza un bloque de texto correspondiente a un único objeto y lo despacha a su dataclass."""
         cleaned = (text or "").strip()
         lines = [line.strip() for line in cleaned.splitlines() if line.strip()]
         if not lines:
@@ -126,38 +148,27 @@ class ItemParser:
         item_level = self._extract_int(cleaned, self._patterns["item_level"])
         name = self._extract_name(lines)
 
-        # 1. ¿Es una Gema?
+        # 1. Identificación de Gemas (Ampliación para Support Gems y Spirit Reserved)
         is_gem = (
-            (item_class and "gem" in item_class.lower()) or
-            rarity.lower() == "gem" or
-            any("gem" in line.lower() for line in lines[:3])
+            (item_class and any(tag in item_class.lower() for tag in ["gem", "support", "skill"])) or
+            rarity.lower() in ("gem", "gema") or
+            any(keyword in line.lower() for line in lines[:3] for keyword in ["gem", "support", "uncut"]) or
+            self._patterns["spirit_reservation"].search(cleaned) is not None
         )
 
         if is_gem:
             return self._build_gem_item(cleaned, lines, name, item_class, rarity, item_level)
 
-        # 2. ¿Es un Mapa o Waystone?
+        # 2. Identificación de Mapas / Waystones
         is_map = (
-            (item_class and "waystone" in item_class.lower()) or
-            (item_class and "map" in item_class.lower()) or
+            (item_class and any(tag in item_class.lower() for tag in ["waystone", "map", "mapa"])) or
             self._patterns["map_tier"].search(cleaned) is not None
         )
 
         if is_map:
-            return MapItem(
-                name=name,
-                item_class=item_class,
-                rarity=rarity,
-                item_level=item_level,
-                raw_text=cleaned,
-                map_tier=self._extract_int(cleaned, self._patterns["map_tier"]),
-                quantity=self._extract_int(cleaned, self._patterns["item_quantity"]),
-                rarity_stat=self._extract_int(cleaned, self._patterns["item_rarity"]),
-                pack_size=self._extract_int(cleaned, self._patterns["pack_size"]),
-                modifiers=self._extract_generic_mods(lines, name)
-            )
+            return self._build_map_item(cleaned, lines, name, item_class, rarity, item_level)
 
-        # 3. De lo contrario, procesar como Equipamiento
+        # 3. Equipamiento (Armas, Armaduras, Joyas, Consumibles de equipo)
         return self._build_equipment_item(cleaned, lines, name, item_class, rarity, item_level)
 
     # =========================================================================
@@ -165,20 +176,33 @@ class ItemParser:
     # =========================================================================
 
     def _split_into_item_blocks(self, full_text: str) -> List[str]:
-        """Divide el texto capturado por OCR en bloques individuales si hay más de un ítem."""
+        """Divide el texto capturado por OCR en bloques individuales preservando los nombres de cabecera."""
         lines = [line.strip() for line in (full_text or "").splitlines() if line.strip()]
         if not lines:
             return []
 
         blocks: List[str] = []
         current_block: List[str] = []
-
-        header_triggers = re.compile(r"^(Item Class:|Rarity:)", re.IGNORECASE)
+        
+        # Rarity o Item Class precedidos opcionalmente de basura OCR (\s*)
+        rarity_trigger = re.compile(r"^\s*Rarity\s*:", re.IGNORECASE)
 
         for line in lines:
-            if header_triggers.match(line) and current_block:
-                blocks.append("\n".join(current_block))
-                current_block = [line]
+            if rarity_trigger.match(line) and current_block:
+                # Si en el bloque actual ya teníamos líneas, la última (o 2 últimas)
+                # suelen ser el nombre del nuevo ítem. Las rescatamos para el nuevo bloque.
+                title_lines = []
+                
+                # Si la línea anterior no es un modificador ni un separador, es el nombre
+                if current_block and not current_block[-1].startswith("--------"):
+                    title_lines.append(current_block.pop())
+
+                # Guardamos el bloque anterior completado
+                if current_block:
+                    blocks.append("\n".join(current_block))
+
+                # Iniciamos el nuevo bloque con el nombre rescatado y la línea actual
+                current_block = title_lines + [line]
             else:
                 current_block.append(line)
 
@@ -196,12 +220,12 @@ class ItemParser:
             "dex": self._extract_int(cleaned, self._patterns["req_dex"]),
             "int": self._extract_int(cleaned, self._patterns["req_int"]),
         }
-        
-        # Extracción de tags (suele ser la 2ª o 3ª línea en gemas: ej. "Spell, AoE, Fire")
+
+        # Extracción flexible de tags (admite tanto "Spell, AoE, Fire" como tags únicos)
         tags: List[str] = []
-        for line in lines[1:4]:
-            if "," in line and not self._looks_like_metadata(line):
-                tags = [tag.strip() for tag in line.split(",")]
+        for line in lines[1:5]:
+            if not self._looks_like_metadata(line) and any(keyword in line.lower() for keyword in ["spell", "attack", "aoe", "fire", "cold", "lightning", "minion", "duration", "aura", "support", "melee", "bow"]):
+                tags = [tag.strip() for tag in line.split(",") if tag.strip()]
                 break
 
         return GemItem(
@@ -219,6 +243,31 @@ class ItemParser:
             description=self._extract_generic_mods(lines, name)
         )
 
+
+    def _build_map_item(
+        self, 
+        cleaned: str, 
+        lines: List[str], 
+        name: str, 
+        item_class: Optional[str], 
+        rarity: str, 
+        item_level: Optional[int]
+    ) -> MapItem:
+        """Helper para aislar la construcción de MapItem."""
+        return MapItem(
+            name=name,
+            item_class=item_class,
+            rarity=rarity,
+            item_level=item_level,
+            raw_text=cleaned,
+            map_tier=self._extract_int(cleaned, self._patterns["map_tier"]),
+            quantity=self._extract_int(cleaned, self._patterns["item_quantity"]),
+            rarity_stat=self._extract_int(cleaned, self._patterns["item_rarity"]),
+            pack_size=self._extract_int(cleaned, self._patterns["pack_size"]),
+            modifiers=self._extract_generic_mods(lines, name)
+        )
+
+
     def _build_equipment_item(
         self, cleaned: str, lines: List[str], name: str, item_class: Optional[str], rarity: str, item_level: Optional[int]
     ) -> EquipmentItem:
@@ -231,6 +280,7 @@ class ItemParser:
 
         base_stats = {
             "physical_damage": self._extract_single_value(cleaned, self._patterns["phys_damage"]),
+            "elemental_damage": self._extract_single_value(cleaned, self._patterns.get("elem_damage")), # Si tienes el regex definido
             "armour": self._extract_int(cleaned, self._patterns["armour"]),
             "evasion": self._extract_int(cleaned, self._patterns["evasion"]),
             "energy_shield": self._extract_int(cleaned, self._patterns["energy_shield"]),
@@ -252,10 +302,19 @@ class ItemParser:
         )
 
     def _extract_name(self, lines: List[str]) -> str:
+        """Extrae el nombre del objeto (soporta nombres de 2 líneas para objetos Raros/Únicos)."""
+        valid_lines = []
         for line in lines:
-            if not self._looks_like_metadata(line):
-                return line
-        return lines[0] if lines else ""
+            if not self._looks_like_metadata(line) and line != "--------":
+                valid_lines.append(line)
+                if len(valid_lines) == 2:
+                    break
+        
+        # Si las dos primeras líneas no son metadatos, en Rare/Unique son [Nombre, Base]
+        if len(valid_lines) >= 2 and not any(kw in valid_lines[1].lower() for kw in ["item class", "rarity"]):
+            return f"{valid_lines[0]} {valid_lines[1]}"
+        
+        return valid_lines[0] if valid_lines else (lines[0] if lines else "")
 
     def _extract_rarity(self, text: str) -> str:
         match = self._patterns["rarity"].search(text)
@@ -267,26 +326,42 @@ class ItemParser:
 
     def _extract_generic_mods(self, lines: List[str], item_name: str) -> List[str]:
         mods = []
+        name_parts = item_name.split()
         for line in lines:
-            if self._looks_like_metadata(line) or line == item_name or len(line) <= 3:
+            # Filtra si es metadato, separador, demasiado corta o coincide con parte del nombre
+            if self._looks_like_metadata(line) or line.startswith("--------") or len(line) <= 3:
+                continue
+            if line in item_name or any(part == line for part in name_parts):
                 continue
             mods.append(line)
         return mods
 
-    def _extract_equipment_mods(self, lines: List[str], item_name: str) -> tuple[List[str], List[str]]:
-        raw_mods = []
-        for line in lines:
-            if self._looks_like_metadata(line) or line == item_name or len(line) <= 3:
-                continue
-            raw_mods.append(line)
+    def _extract_equipment_mods(self, lines: List[str], item_name: str) -> Tuple[List[str], List[str]]:
+        """Separa modificadores implícitos de explícitos, soportando múltiples implícitos."""
+        raw_mods = self._extract_generic_mods(lines, item_name)
+        
+        implicits = []
+        explicits = []
 
-        if len(raw_mods) > 1 and ("(implicit)" in raw_mods[0].lower() or self._is_typical_implicit(raw_mods[0])):
-            return [raw_mods[0]], raw_mods[1:]
+        for mod in raw_mods:
+            if "(implicit)" in mod.lower() or self._is_typical_implicit(mod):
+                # Limpia la etiqueta (implicit) si el OCR la capturó explícitamente
+                clean_mod = re.sub(r"\s*\((?:implicit)\)", "", mod, flags=re.IGNORECASE).strip()
+                implicits.append(clean_mod)
+            else:
+                explicits.append(mod)
 
-        return [], raw_mods
+        return implicits, explicits
 
     def _is_typical_implicit(self, line: str) -> bool:
-        implicit_keywords = ["implicit", "increased global", "to all elemental resistances"]
+        implicit_keywords = [
+            "implicit", 
+            "increased global", 
+            "to all elemental resistances",
+            "movement speed",
+            "block chance",
+            "spirit"
+        ]
         return any(kw in line.lower() for kw in implicit_keywords)
 
     def _extract_single_value(self, text: str, pattern: re.Pattern[str]) -> Optional[str]:

@@ -1,14 +1,9 @@
-"""Capa de integración OCR para leer texto desde capturas de pantalla.
-
-Este módulo es intencionalmente ligero y está centrado en el flujo principal
-necesario para un asistente del juego: resolver el ejecutable de Tesseract,
-preprocesar la captura y devolver texto limpio reconocido.
-"""
+"""Capa de integración OCR optimizada para tooltips y menús de PoE 2."""
 
 from __future__ import annotations
 
+import shutil
 from pathlib import Path
-from typing import Any
 
 import cv2
 import numpy as np
@@ -17,56 +12,65 @@ from PIL import Image
 
 
 class OcrEngine:
-    """Motor OCR para extraer texto de una captura o imagen de pantalla."""
+    """Motor OCR especializado en extracción de texto estructurado sobre fondo oscuro."""
 
     def __init__(self, tesseract_cmd: str | Path | None = None) -> None:
-        """Inicializa el motor OCR y configura Tesseract.
-
-        Args:
-            tesseract_cmd: Ruta al ejecutable de Tesseract. Si no se proporciona,
-                se usa la ruta de instalación por defecto dentro de Program Files.
-        """
-        default_path = Path(r"C:\Program Files\Tesseract-OCR\tesseract.exe")
-        resolved_path = Path(tesseract_cmd) if tesseract_cmd else default_path
-
-        if resolved_path.exists():
-            pytesseract.pytesseract.tesseract_cmd = str(resolved_path)
-        elif tesseract_cmd is not None:
-            pytesseract.pytesseract.tesseract_cmd = str(resolved_path)
+        if tesseract_cmd:
+            resolved_path = Path(tesseract_cmd)
+            if resolved_path.exists():
+                pytesseract.pytesseract.tesseract_cmd = str(resolved_path)
+            else:
+                raise FileNotFoundError(f"Ejecutable de Tesseract no encontrado en: {resolved_path}")
         else:
-            raise FileNotFoundError("Tesseract executable not found.")
+            # Revisa si está en el PATH del sistema o en la ruta por defecto de Windows
+            system_tesseract = shutil.which("tesseract")
+            default_win_path = Path(r"C:\Program Files\Tesseract-OCR\tesseract.exe")
+
+            if system_tesseract:
+                pytesseract.pytesseract.tesseract_cmd = system_tesseract
+            elif default_win_path.exists():
+                pytesseract.pytesseract.tesseract_cmd = str(default_win_path)
+            else:
+                raise FileNotFoundError(
+                    "Tesseract no se encuentra en el PATH ni en C:\\Program Files\\Tesseract-OCR\\tesseract.exe"
+                )
 
     def preprocess_image(self, image: Image.Image) -> np.ndarray:
-            """Convierte una imagen PIL en un array de OpenCV y la normaliza para OCR.
+        """Aumenta la resolución y resalta el contraste manteniendo los detalles de color."""
+        array = np.array(image)
 
-            Convierte a escala de grises y mejora el contraste para texto blanco o
-            brillante sobre fondos oscuros, como tooltips o menús.
-            """
-            array = np.array(image)
-            if array.ndim == 3:
-                gray = cv2.cvtColor(array, cv2.COLOR_RGB2GRAY)
-            else:
-                gray = array
+        # 1. Redimensionar 2x con interpolación CÚBICA para mejorar la nitidez de la fuente
+        height, width = array.shape[:2]
+        scaled = cv2.resize(array, (width * 2, height * 2), interpolation=cv2.INTER_CUBIC)
 
-            _, thresholded = cv2.threshold(gray, 150, 255, cv2.THRESH_BINARY)
-            return thresholded
+        # 2. Conversión a escala de grises
+        if scaled.ndim == 3:
+            gray = cv2.cvtColor(scaled, cv2.COLOR_RGB2GRAY)
+        else:
+            gray = scaled
+
+        # 3. CLAHE (Contrast Limited Adaptive Histogram Equalization)
+        # Saca a la luz el texto de color tenue (azul, amarillo, rojo) sobre fondos oscuros
+        clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
+        enhanced = clahe.apply(gray)
+
+        # 4. Otsu's Thresholding (Calcula el umbral óptimo de forma dinámica)
+        _, thresholded = cv2.threshold(enhanced, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+
+        return thresholded
 
     def extract_text(self, image: Image.Image, preprocess: bool = True) -> str:
-        """Extrae texto OCR de una imagen y lo devuelve recortado limpiamente.
-
-        Args:
-            image: Imagen PIL a analizar.
-            preprocess: Si es True, aplica la pipeline de grises + threshold de OpenCV.
-
-        Returns:
-            Texto reconocido con el espacio en blanco alrededor eliminado.
-        """
+        """Extrae texto con configuración óptima para bloques de tooltips."""
         processed = self.preprocess_image(image) if preprocess else np.array(image)
+
+        # --psm 6: Asume un único bloque uniforme de texto (ideal para tooltips)
+        # --oem 3: Usa el motor de red neuronal LSTM por defecto
+        custom_config = r"--psm 6 --oem 3"
 
         if processed.ndim == 3:
             rgb = cv2.cvtColor(processed, cv2.COLOR_BGR2RGB)
-            text = pytesseract.image_to_string(rgb)
+            text = pytesseract.image_to_string(rgb, config=custom_config)
         else:
-            text = pytesseract.image_to_string(processed)
+            text = pytesseract.image_to_string(processed, config=custom_config)
 
         return text.strip()

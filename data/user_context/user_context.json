@@ -1,41 +1,8 @@
 {
   "user_id": "",
-  "character_name": "",
-  "pob_link": "",
-  "pob_data": {
-    "last_parsed": null,
-    "level": null,
-    "class": "",
-    "ascendancy": "",
-    "main_skill": "",
-    "stats": {
-      "combined_dps": 0.0,
-      "hit_dps": 0.0,
-      "poison_dps": 0.0,
-      "dot_dps": 0.0,
-      "average_damage": 0.0,
-      "attack_cast_rate": 0.0,
-      "life": 0.0,
-      "mana": 0.0,
-      "armour": 0.0,
-      "evasion": 0.0,
-      "energy_shield": 0.0,
-      "resistances": {
-        "fire": 0.0,
-        "cold": 0.0,
-        "lightning": 0.0,
-        "chaos": 0.0
-      },
-      "attributes": {
-        "strength": 0.0,
-        "dexterity": 0.0,
-        "intelligence": 0.0
-      }
-    },
-    "active_keystones": [],
-    "active_notables": [],
-    "equipped_slots": []
-  },
+  "account_name": "",
+  "active_character_name": "",
+  "last_pob_link": "",
   "current_intent": {
     "goal": "",
     "priority": "balanced",

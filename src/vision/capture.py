@@ -1,90 +1,79 @@
-"""Utilidades de captura pasiva de pantalla para PoE 2 y fallback de escritorio.
-
-Este módulo evita intencionalmente la lectura de memoria y la inyección de DLL.
-Primero usa una captura basada en la ventana y, si no se detecta ninguna,
-recurre a la captura de pantalla completa.
-"""
-
 from __future__ import annotations
 
+import ctypes
+import threading
 from pathlib import Path
-from typing import Optional
 
 import mss
 import pygetwindow as gw
 from PIL import Image
 
+# Configurar DPI Awareness para evitar escalados erróneos
+try:
+    ctypes.windll.shcore.SetProcessDpiAwareness(2)
+except Exception:
+    try:
+        ctypes.windll.user32.SetProcessDPIAware()
+    except Exception:
+        pass
+
 
 class ScreenCapturer:
-    """Captura la ventana activa del juego o la pantalla completa en un formato compatible con PIL.
-
-    La clase intenta localizar una ventana por su título (ideal para Path of Exile 2)
-    y luego captura su área visible. Si no encuentra una ventana coincidente,
-    usa la pantalla principal completa como fallback.
-    """
+    """Captura la ventana activa del juego o la pantalla completa en formato PIL."""
 
     def __init__(self, window_title: str | None = None) -> None:
         self.window_title = window_title
-        self._sct = mss.MSS()
+        self._local = threading.local()
 
-    def find_window(self, title: str | None = None) -> Optional[gw.Win32Window]:
-        """Localiza una ventana por nombre usando pygetwindow.
+    @property
+    def sct(self) -> mss.mss:
+        """Instancia aislada de MSS por hilo (thread-safe)."""
+        if not getattr(self._local, "sct", None):
+            self._local.sct = mss.mss()
+        return self._local.sct
 
-        Args:
-            title: Título objetivo de la ventana. Si se omite, se usa el valor
-                definido en la instancia.
-
-        Returns:
-            El primer objeto de ventana coincidente o None si no se encuentra.
-        """
+    def find_window(self, title: str | None = None) -> gw.Win32Window | None:
+        """Localiza una ventana visible y no minimizada por título parcial."""
         target_title = title or self.window_title
         if not target_title:
             return None
 
-        windows = gw.getWindowsWithTitle(target_title)
-        if not windows:
+        try:
+            windows = [
+                w for w in gw.getWindowsWithTitle(target_title)
+                if w.visible and not w.isMinimized
+            ]
+            return windows[0] if windows else None
+        except Exception:
             return None
 
-        return windows[0]
-
-    def capture_window(self, title: str | None = None) -> Image.Image | None:
-        """Captura una ventana concreta como una imagen PIL.
-
-        Args:
-            title: Título opcional que sobrescribe el objetivo de la ventana.
-
-        Returns:
-            Una imagen PIL o None si no se encuentra ninguna ventana coincidente.
-        """
+    def capture_window(self, title: str | None = None) -> Image.Image:
+        """Captura la ventana especificada o cae en fallback a pantalla completa."""
         window = self.find_window(title)
+
         if window is None:
             return self.capture_screen()
 
-        if getattr(window, "isMinimized", False):
+        left, top, width, height = int(window.left), int(window.top), int(window.width), int(window.height)
+
+        if width <= 0 or height <= 0:
             return self.capture_screen()
 
-        left = max(0, int(window.left))
-        top = max(0, int(window.top))
-        width = max(1, int(window.width))
-        height = max(1, int(window.height))
+        # MSS soporta coordenadas negativas (monitores secundarios/ventanas maximizadas)
+        monitor = {"left": left, "top": top, "width": width, "height": height}
 
-        monitor = {
-            "left": left,
-            "top": top,
-            "width": width,
-            "height": height,
-        }
-
-        screenshot = self._sct.grab(monitor)
-        image = Image.frombytes("RGB", screenshot.size, screenshot.rgb)
-        return image
+        try:
+            screenshot = self.sct.grab(monitor)
+            # mss devuelve BGRA nativamente; es más eficiente convertir desde 'RGBX'
+            return Image.frombytes("RGB", screenshot.size, screenshot.bgra, "raw", "BGRX")
+        except mss.exception.ScreenShotError:
+            return self.capture_screen()
 
     def capture_screen(self) -> Image.Image:
-        """Captura la pantalla principal como imagen PIL como fallback."""
-        monitor = self._sct.monitors[1]  # Monitor principal
-        screenshot = self._sct.grab(monitor)
-        image = Image.frombytes("RGB", screenshot.size, screenshot.rgb)
-        return image
+        """Captura el monitor principal completo."""
+        monitor = self.sct.monitors[1]
+        screenshot = self.sct.grab(monitor)
+        return Image.frombytes("RGB", screenshot.size, screenshot.bgra, "raw", "BGRX")
 
     def save_capture(
         self,
@@ -92,33 +81,22 @@ class ScreenCapturer:
         title: str | None = None,
         image: Image.Image | None = None,
     ) -> Path:
-        """Captura y guarda una imagen en disco.
-
-        Args:
-            output_path: Ruta de destino para el archivo guardado.
-            title: Título opcional para localizar la ventana del juego.
-            image: Imagen precalculada opcional para guardar.
-
-        Returns:
-            La ruta absoluta de la imagen generada.
-        """
-        destination = Path(output_path)
+        """Guarda la captura en disco creando la ruta si no existe."""
+        destination = Path(output_path).resolve()
         destination.parent.mkdir(parents=True, exist_ok=True)
 
-        if image is None:
-            image = self.capture_window(title)
-
-        if image is None:
-            raise RuntimeError("No screen capture could be produced.")
-
-        image.save(destination)
+        img_to_save = image or self.capture_window(title)
+        img_to_save.save(destination)
         return destination
 
     def close(self) -> None:
-        """Libera el recurso subyacente de MSS."""
-        self._sct.close()
+        """Libera los recursos de MSS asociados al hilo actual."""
+        sct_instance = getattr(self._local, "sct", None)
+        if sct_instance is not None:
+            sct_instance.close()
+            self._local.sct = None
 
-    def __enter__(self) -> "ScreenCapturer":
+    def __enter__(self) -> ScreenCapturer:
         return self
 
     def __exit__(self, exc_type, exc_value, traceback) -> None:
