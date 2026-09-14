@@ -1,49 +1,128 @@
-"""Estilos QSS para el Overlay de Atziri."""
+# src/ui/styles.py
 
 OVERLAY_STYLE = """
+/* Ventana Principal */
 QWidget#MainFrame {
-    background-color: rgba(18, 18, 22, 0.92);
-    border: 1px solid #3c3222;
+    background-color: #0D0F12;
+    border: 2px solid #C5A059;
     border-radius: 8px;
 }
 
-QLabel {
-    color: #e0e0e0;
-    font-family: 'Consolas', 'Segoe UI', monospace;
-    font-size: 13px;
-}
-
+/* Encabezado */
 QLabel#HeaderTitle {
-    color: #af9250;
+    color: #E6C687;
     font-size: 15px;
     font-weight: bold;
+    letter-spacing: 1px;
 }
 
-QPushButton {
-    background-color: #2a2418;
-    color: #af9250;
-    border: 1px solid #5a4828;
-    border-radius: 4px;
-    padding: 6px 12px;
+/* Botones de la Barra Superior (Pantalla completa y Cierre) */
+QPushButton#HeaderButton {
+    background-color: #1A1D24;
+    color: #C5A059;
+    font-size: 13px;
     font-weight: bold;
+    border: 1px solid #2B3342;
+    border-radius: 4px;
+    padding: 0px;
+    text-align: center;
+}
+
+QPushButton#HeaderButton:hover {
+    background-color: #2A2415;
+    border: 1px solid #C5A059;
+    color: #FFF;
+}
+
+QPushButton#CloseButton {
+    background-color: #1A1D24;
+    color: #E74C3C;
+    font-size: 14px;
+    font-weight: bold;
+    border: 1px solid #3D1414;
+    border-radius: 4px;
+    padding: 0px;
+    text-align: center;
+}
+
+QPushButton#CloseButton:hover {
+    background-color: #3D1414;
+    color: #FF6B6B;
+    border: 1px solid #E74C3C;
+}
+
+/* Botones del Panel Lateral */
+QPushButton {
+    background-color: #14171E;
+    color: #C5A059;
+    border: 1px solid #2B3342;
+    border-radius: 6px;
+    padding: 6px 12px;
+    font-size: 13px;
+    font-weight: 500;
 }
 
 QPushButton:hover {
-    background-color: #3e321e;
-    color: #ffd700;
-    border: 1px solid #8a6d3b;
+    background-color: #1E232D;
+    border: 1px solid #C5A059;
+    color: #FFF;
 }
 
 QPushButton:pressed {
-    background-color: #1a150e;
+    background-color: #2B5C8F;
+    color: #FFF;
 }
 
-QTextEdit {
-    background-color: rgba(10, 10, 12, 0.8);
-    color: #dcdcdc;
-    border: 1px solid #2a2418;
+/* Cajas de texto y Chat */
+QTextBrowser, QTextEdit, QLineEdit {
+    background-color: #101218;
+    color: #DCDCDC;
+    border: 1px solid #2B3342;
+    border-radius: 6px;
+    padding: 6px;
+    selection-background-color: #2B5C8F;
+}
+
+QLineEdit:focus, QTextEdit:focus {
+    border: 1px solid #C5A059;
+}
+
+/* Divisor Ajustable (QSplitter) */
+QSplitter::handle {
+    background-color: #2B3342;
+    height: 4px;
+    border-radius: 2px;
+    margin: 2px 0px;
+}
+
+QSplitter::handle:hover {
+    background-color: #C5A059;
+}
+
+/* Barras de Desplazamiento (Scrollbars) */
+QScrollArea {
+    border: none;
+    background-color: transparent;
+}
+
+QScrollBar:vertical {
+    border: none;
+    background-color: #0D0F12;
+    width: 8px;
     border-radius: 4px;
-    font-family: 'Consolas', 'Segoe UI', monospace;
-    font-size: 12px;
+}
+
+QScrollBar::handle:vertical {
+    background-color: #2B3342;
+    border-radius: 4px;
+    min-height: 20px;
+}
+
+QScrollBar::handle:vertical:hover {
+    background-color: #C5A059;
+}
+
+QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
+    height: 0px;
 }
 """

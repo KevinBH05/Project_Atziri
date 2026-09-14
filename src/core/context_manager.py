@@ -47,15 +47,18 @@ class ActiveCharacterState:
             "class": getattr(b, "character_class", "Desconocida"),
             "level": getattr(b, "level", 1),
             "main_skill": getattr(b, "main_skill_name", "N/A"),
+            "active_skills": getattr(b, "active_skills", []), # Útil para recomendar gemas o sub-efectos
             "stats": {
                 "combined_dps": getattr(stats, "combined_dps", 0.0),
                 "hit_dps": getattr(stats, "hit_dps", 0.0),
                 "life": getattr(stats, "life", 0),
                 "mana": getattr(stats, "mana", 0),
-                "spirit": getattr(stats, "spirit", 0),  # Clave para PoE 2
+                "spirit": getattr(stats, "spirit", 0),  
                 "armour": getattr(stats, "armour", 0),
                 "evasion": getattr(stats, "evasion", 0),
                 "energy_shield": getattr(stats, "energy_shield", 0),
+                "runic_shield": getattr(stats, "runic_shield", 0), # Añadido para PoE 2
+                "block_chance": getattr(stats, "block_chance", 0), # Añadido para escudos
                 "resistances": {
                     "fire": getattr(stats, "fire_resistance", 0),
                     "cold": getattr(stats, "cold_resistance", 0),

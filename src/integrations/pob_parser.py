@@ -15,7 +15,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, List, Tuple
 
-from src.vision.item_parser import EquipmentItem, GemItem, ItemParser
+from src.listener.item_parser import EquipmentItem, GemItem, ItemParser
 
 
 # =============================================================================
@@ -113,7 +113,6 @@ class PoBLoader:
         if not payload or not isinstance(payload, str):
             raise ValueError("La cadena de entrada está vacía o no es válida.")
 
-        # Limpiar espacios y normalizar caracteres base64 URL-safe
         clean_payload = (
             payload.strip()
             .replace("\r", "")
@@ -179,7 +178,6 @@ class PoBLoader:
             if stat_name and val is not None:
                 raw_stats[stat_name] = self._safe_float(val)
 
-        # DPS y Ataque/Hechizo
         stats.combined_dps = next(
             (raw_stats[k] for k in ("CombinedDPS", "TotalDPS", "Total DPS per Poison") if k in raw_stats),
             0.0
@@ -205,7 +203,6 @@ class PoBLoader:
             0.0
         )
 
-        # Recursos
         stats.life = raw_stats.get("Life", 0.0)
         stats.mana = raw_stats.get("Mana", 0.0)
         stats.spirit_total = raw_stats.get("Spirit", 0.0)
@@ -215,18 +212,15 @@ class PoBLoader:
             max(0.0, stats.spirit_total - stats.spirit_reserved)
         )
 
-        # Defensas
         stats.armour = raw_stats.get("Armour", 0.0)
         stats.evasion = raw_stats.get("Evasion", 0.0)
         stats.energy_shield = raw_stats.get("EnergyShield", 0.0)
 
-        # Resistencias
         stats.fire_resistance = raw_stats.get("FireResist", 0.0)
         stats.cold_resistance = raw_stats.get("ColdResist", 0.0)
         stats.lightning_resistance = raw_stats.get("LightningResist", 0.0)
         stats.chaos_resistance = raw_stats.get("ChaosResist", 0.0)
 
-        # Atributos y Requisitos (PoB usa Str, Dex, Int)
         stats.strength = raw_stats.get("Str", raw_stats.get("Strength", 0.0))
         stats.dexterity = raw_stats.get("Dex", raw_stats.get("Dexterity", 0.0))
         stats.intelligence = raw_stats.get("Int", raw_stats.get("Intelligence", 0.0))
@@ -242,7 +236,6 @@ class PoBLoader:
         if items_root is None:
             return equipped
 
-        # 1. Parsear todos los ítems por su ID
         parsed_items_by_id: Dict[str, EquipmentItem] = {}
         for item_elem in items_root.findall("Item"):
             item_id = item_elem.attrib.get("id")
@@ -254,7 +247,6 @@ class PoBLoader:
             if isinstance(parsed, EquipmentItem):
                 parsed_items_by_id[item_id] = parsed
 
-        # 2. Localizar el ItemSet activo
         active_set_id = items_root.attrib.get("activeItemSet", "1")
         target_item_set = None
 
@@ -263,11 +255,9 @@ class PoBLoader:
                 target_item_set = item_set
                 break
 
-        # Si no se encuentra el ID activo, fallback al primer ItemSet o al propio items_root
         if target_item_set is None:
             target_item_set = items_root.find("ItemSet") or items_root
 
-        # 3. Mapear los slots del set activo
         for slot_elem in target_item_set.findall("Slot"):
             slot_name = slot_elem.attrib.get("name")
             item_id = slot_elem.attrib.get("itemId")
@@ -282,7 +272,6 @@ class PoBLoader:
         if tree_node is None:
             return tree_data
 
-        # Buscar el Spec activo (o el primero disponible)
         active_spec_id = tree_node.attrib.get("activeSpec", "1")
         spec = None
         
@@ -295,10 +284,8 @@ class PoBLoader:
             spec = tree_node.find("Spec")
 
         if spec is not None:
-            # Puntos sin asignar
             tree_data.unallocated_points = self._safe_int(spec.attrib.get("pointsUnused"), 0)
             
-            # Nodos asignados
             nodes_attr = spec.attrib.get("nodes", "")
             if nodes_attr:
                 tree_data.allocated_node_ids = [
@@ -312,7 +299,6 @@ class PoBLoader:
         if skills_root is None:
             return "Unknown Skill", []
 
-        # 1. Localizar el SkillSet activo
         active_set_id = skills_root.attrib.get("mainActiveSkillSet", "1")
         target_skill_set = None
 
@@ -324,19 +310,16 @@ class PoBLoader:
         if target_skill_set is None:
             target_skill_set = skills_root.find("SkillSet") or skills_root
 
-        # Determinar cuál es el grupo principal activo global
         main_group_index = self._safe_int(target_skill_set.attrib.get("mainActiveSkill"), 1)
 
         groups: List[SkillGroup] = []
         main_skill_name = "Unknown Skill"
 
-        # 2. Iterar sobre los grupos <Skill>
         for idx, skill_elem in enumerate(target_skill_set.findall("Skill"), start=1):
             is_enabled = skill_elem.attrib.get("enabled") != "false"
             if not is_enabled:
                 continue
 
-            # Si coincide con el índice principal o tiene el flag
             is_main = (idx == main_group_index) or (skill_elem.attrib.get("mainActiveSkill") == "1")
             gems: List[GemItem] = []
 
@@ -374,19 +357,14 @@ class PoBLoader:
                 gems.append(gem_item)
 
             if gems:
-                # Asignar etiqueta o usar el nombre de la primera gema si no hay label
                 label = skill_elem.attrib.get("label") or gems[0].name
-                
-                # Instanciar el SkillGroup (sin el parámetro is_active_auras)
                 group = SkillGroup(label=label, is_main=is_main, gems=gems)
                 groups.append(group)
 
-                # Extraer el nombre de la habilidad principal (la primera gema activa que no sea support)
                 if is_main and main_skill_name == "Unknown Skill":
                     active_gem = next((g for g in gems if g.item_class != "Support Gem"), gems[0])
                     main_skill_name = active_gem.name
 
-        # Fallback si no se encontró la main skill implícita
         if main_skill_name == "Unknown Skill" and groups and groups[0].gems:
             main_skill_name = groups[0].gems[0].name
 
@@ -395,7 +373,6 @@ class PoBLoader:
     def _extract_character_details(self, root: ET.Element) -> Tuple[str, str, str, int]:
         build_node = root.find(".//Build")
         if build_node is not None:
-            # Priorizar el atributo 'name' de <Build> o de la raíz <PathOfBuilding>
             name = build_node.attrib.get("name") or root.attrib.get("name") or "Build PoB2"
             character_class = build_node.attrib.get("className") or "Unknown"
             ascendancy = build_node.attrib.get("ascendClassName") or ""
@@ -435,10 +412,6 @@ class PoBParser(PoBLoader):
         return PoBLoader(payload).load_build()
 
     def update_user_context(self, context_json_path: str | Path, source_payload: str | Path) -> Tuple[PoBBuild, dict]:
-        """
-        Parsea la build de PoB2, actualiza las preferencias no volátiles en disco 
-        y devuelve la instancia completa PoBBuild para el ContextManager en RAM.
-        """
         build = self.parse(source_payload)
         path = Path(context_json_path)
 
@@ -450,7 +423,6 @@ class PoBParser(PoBLoader):
             except json.JSONDecodeError:
                 context = {}
 
-        # Actualizar únicamente la configuración no volátil
         context["character_name"] = build.character_name
         context["character_class"] = build.character_class
         context["ascendancy"] = build.ascendancy_name
@@ -459,14 +431,11 @@ class PoBParser(PoBLoader):
         if isinstance(source_payload, str) and self._looks_like_encoded_payload(source_payload):
             context["pob_link"] = source_payload
 
-        # Metadata de sincronización
         context["last_updated"] = datetime.now(timezone.utc).isoformat()
 
-        # Escritura atómica a disco para persistencia estricta de preferencias
         temp_path = path.with_suffix(".tmp")
         with open(temp_path, "w", encoding="utf-8") as f:
             json.dump(context, f, indent=2, ensure_ascii=False)
         temp_path.replace(path)
 
-        # Devolvemos la build viva (para RAM) y el contexto persistido
         return build, context

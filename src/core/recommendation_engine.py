@@ -9,7 +9,7 @@ from typing import ClassVar, Dict, List, Optional, Set, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from integrations.pob_parser import PoBBuild
-    from vision.item_parser import EquipmentItem, GemItem
+    from listener.item_parser import EquipmentItem, GemItem
 
 
 from typing import Dict, List, Optional

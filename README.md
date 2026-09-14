@@ -1,9 +1,10 @@
 # 🎮 Proyecto Atziri (AI Gaming Copilot) — Path of Exile 2
 
-> Asistente contextual e inteligente de IA para Path of Exile 2. Analiza el contexto de juego mediante visión artificial (LLM Vision) y un sistema híbrido de RAG + Tool Calling para ofrecer recomendaciones y guías en tiempo real, sin interactuar con la memoria del cliente.
+> Asistente contextual e inteligente de IA para Path of Exile 2. Lee e ingesta el texto nativo de los objetos copiados desde el juego (`Ctrl + C`) y utiliza un sistema híbrido de RAG + Tool Calling para ofrecer recomendaciones y análisis en tiempo real a través de un overlay transparente, sin interactuar con la memoria del cliente.
 
 ![Python](https://img.shields.io/badge/Python-3.10%2B-blue?style=for-the-badge&logo=python)
 ![Architecture](https://img.shields.io/badge/Architecture-Agentic%20RAG%20%2B%20Tools-orange?style=for-the-badge)
+![UI](https://img.shields.io/badge/UI-PyQt6%20Overlay-purple?style=for-the-badge)
 ![Status](https://img.shields.io/badge/Status-In%20Development-yellow?style=for-the-badge)
 ![Anti-Ban](https://img.shields.io/badge/Anti--Ban-Safe%20External-brightgreen?style=for-the-badge)
 
@@ -13,68 +14,65 @@
 
 **Proyecto Atziri** nace para resolver la alta barrera de entrada y la sobrecarga de información en **Path of Exile 2**. 
 
-A diferencia de bots o macros tradicionales, este sistema actúa como un **copiloto inteligente**: observa tus capturas de pantalla, comprende tu build importando tu Path of Building (PoB), y consulta tanto bases de datos estáticas (gemas, únicos) como el metagame en tiempo real (poe.ninja, YouTube) para dar consejos precisos. Todo ello manteniendo la aplicación local extremadamente ligera.
+A diferencia de bots o herramientas pesadas de análisis de imagen, este sistema actúa como un **copiloto ultra-ligero de respuesta instantánea**: escucha de forma pasiva el texto nativo copiado al portapapeles (`Ctrl + C`), comprende tu build importando tu Path of Building (PoB), y consulta tanto bases de datos estáticas (gemas, únicos, mecánicas) como el metagame en tiempo real para dar veredictos y consejos precisos sobre ítems, modificadores y precios.
 
 ### 🛡️ Filosofía Anti-Ban (Safe by Design)
 El proyecto prioriza la seguridad de la cuenta por encima de todo:
-* ❌ **No** lee memoria (`ReadProcessMemory`).
-* ❌ **No** realiza inyección de DLLs ni hooks al proceso del juego.
-* ❌ **No** automatiza entradas de teclado/ratón (sin autoplay).
-* ✅ **100% Externo:** Funciona analizando capturas de pantalla de forma pasiva y se alimenta de archivos de texto exportados por el usuario (XML de PoB).
+* ❌ **No** lee memoria del proceso (`ReadProcessMemory`).
+* ❌ **No** realiza inyección de DLLs ni hooks al cliente del juego.
+* ❌ **No** automatiza entradas de teclado/ratón (sin autoplay ni macros de acciones en el juego).
+* ✅ **100% Pasivo y Externo:** Utiliza únicamente la función nativa del motor de PoE 2 para exportar objetos al portapapeles de Windows (`Ctrl + C`) y se alimenta de archivos de texto/XML creados por el usuario (PoB).
 
 ---
 
 ## 🏗️ Arquitectura Híbrida del Sistema
 
-La aplicación separa estrictamente el conocimiento inmutable (guardado en local) del conocimiento volátil (consultado bajo demanda).
-
+La aplicación separa strictly la lectura pasiva de datos en tiempo real del motor de razonamiento del LLM.
+```text
 +------------------------------------+
-|   Input del Jugador (Capturas)     |
+|    Jugador en PoE 2 (Ctrl + C)     |
++------------------------------------+
+                  |
+                  v (Texto Plano Nativo)
++------------------------------------+        +------------------------------------+
+| Clipboard Listener & ItemParser    |  <---> | Path of Building (PoB Integration) |
+| (Soporte Español / Inglés)         |        +------------------------------------+
 +------------------------------------+
                   |
                   v
-+------------------------------------+       +------------------------------------+
-|  Parseo de Usuario (Contexto)      | <---> | Path of Building (PoB Integration) |
-|  (LLM Vision API + PoB Parser)     |       +------------------------------------+
++------------------------------------+        +------------------------------------+
+|     Ziri (El Cerebro Entrenador)   |  <---> | YouTube Guiding & Market Linker    |
+|   (Veredicto Directo & Accionable) |        +------------------------------------+
 +------------------------------------+
                   |
                   v
 +------------------------------------+
-|      Agente LLM (El Cerebro)       | <---> [ Memoria de Sesión de la Build ]
-|    (Enrutador + Tool Calling)      |
+|     Overlay Transparente PyQt6     |
+|   (Tarjetas, Análisis & Comodines) |
 +------------------------------------+
-       |          |          |
-       v          v          v
-+----------+ +----------+ +----------+
-| Base RAG | | APIs Live| | Web/YT   |
-| (Local)  | | (Meta)   | | (Guías)  |
-+----------+ +----------+ +----------+
-  Gemas,      poe.ninja,   Maxroll,
-  Únicos,     Precios      Transcripts
-  Pasivas
+```
 
----
+ ---
 
 ## 🛠️ Tech Stack
 
 * **Core & Backend:** Python 3.10+
-* **Ingesta de Datos Estáticos:** Playwright, BeautifulSoup (Extracción JIT a JSON).
-* **Visión Artificial:** LLM Vision API (sustituyendo a OCR tradicional para mayor precisión semántica).
-* **Integración de Terceros:** Parser integrado para Path of Building (PoB XML/JSON) para análisis dinámico del estado del jugador.
-* **Base de Datos Vectorial:** ChromaDB (Indexado en local súper ligero mediante *embeddings*).
-* **Orquestación RAG y Agentes:** LangChain / LlamaIndex (Para enrutamiento de *Tool Calling*).
-* **Procesamiento Dinámico (Zero-Bloat):** `youtube-transcript-api` (extracciones de guías al vuelo sin descargas de vídeo) + API requests (poe.ninja).
-* **UI:** Gradio / Streamlit / Discord Bot (Pendiente de decisión).
+* **Ingesta de Objetos:** Listener pasivo de portapapeles (`pyperclip`) y parser regex avanzado multi-idioma (Español / Inglés).
+* **Interfaz de Usuario (UI):** PyQt6 (Overlay flotante, transparente e interactivo sobre la ventana del juego).
+* **Integración de Terceros:** Parser integrado para Path of Building (PoB XML/JSON) para análisis dinámico del estado del personaje.
+* **Base de Datos Vectorial:** ChromaDB (Indexado local súper ligero mediante *embeddings*).
+* **Orquestación RAG y Agentes:** SDK de Google Gemini / OpenAI + LangChain para enrutamiento de *Tool Calling*.
+* **Procesamiento Dinámico:** `youtube-transcript-api` (extracción de guías al vuelo sin descargas)
 
 ---
 
 ## 🚀 Roadmap de Desarrollo
 
-- [ ] **Fase 1: Base de Conocimiento Estática (RAG)** — Vectorización unificada de Gemas, Objetos Únicos y Mecánicas en ChromaDB. *(En progreso)*
-- [x] **Fase 2: Conectores de Usuario** — Parser de XML de Path of Building y análisis de capturas de pantalla integrados.
-- [ ] **Fase 3: Inteligencia Dinámica (APIs)** — Herramientas en tiempo real (*Tool Calling*) para poe.ninja, YouTube y Maxroll (Just-In-Time, sin saturar el almacenamiento local).
-- [ ] **Fase 4: Cerebro del Agente** — Orquestación del LLM para decidir de forma autónoma cuándo buscar en local, cuándo llamar a una API y cómo mantener el contexto/memoria de la sesión.
-- [ ] **Fase 5: Interfaz de Usuario (UI)** — Implementación del frontend amigable para la interacción final con el jugador.
+- [x] **Fase 1: Ingesta Pasiva de Objetos** — Listener de portapapeles de baja latencia (`listener.py`) e `ItemParser` optimizado para español e inglés sin dependencia de OCR.
+- [x] **Fase 2: Base de Conocimiento Estática (RAG)** — Vectorización unificada de Gemas, Objetos Únicos y Mecánicas en ChromaDB.
+- [x] **Fase 3: Overlay UI** — Implementación de la ventana transparente e interactiva en PyQt6 para mostrar resultados al instante sobre el juego.
+- [x] **Fase 4: Inteligencia Dinámica (APIs)** — Conectores optimizados para poe.ninja (generador de URLs de filtrado directo) y guías en vídeo.
+- [ ] **Fase 5: Conector PoB & Cerebro del Agente** — Integración final del estado del personaje con el LLM para recomendaciones personalizadas de ítems.
 
 ---
 
