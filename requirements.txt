@@ -3,33 +3,24 @@ python-dotenv>=1.0.1
 pydantic>=2.7.0
 pydantic-settings>=2.2.1
 pyyaml>=6.0.1
-types-PyYAML>=6.0.12.20240311
 requests>=2.32.0
-httpx>=0.27.0
-aiohttp>=3.9.5
-pyperclip>=1.8.2               # Manejo del portapapeles de Windows (Ctrl+C)
-curl_cffi>=0.7.0               # Peticiones HTTP seguras e impersonadas
+pyperclip>=1.8.2               # Portapapeles
+curl_cffi>=0.7.0               # Scraping seguro e impersonado
 
 # RAG & Vector Store
-chromadb>=0.5.0                # Base de datos vectorial persistente local
+chromadb>=0.5.0                # Base de datos vectorial
 
-# LLM & Integraciones de API
-google-genai>=0.1.0            # SDK de Google Gemini
-openai>=1.30.0                 # Modelos compatibles con OpenAI / Ollama local
+# LLM & Integraciones
+google-genai>=0.1.0            # SDK oficial de Gemini
 
-# Integration, Parsing & Text Processing
+# Parsing & Scraping
 beautifulsoup4>=4.12.3
-lxml>=5.2.0
-markdown>=3.6.0                # Renderizado de Markdown a HTML en la interfaz (QTextBrowser)
+lxml>=5.2.0                    # Parser rápido para XML (PoB) y HTML
+markdown>=3.6.0                # Renderizado de texto en el Chat
 
-# Herramientas y Transcripciones (Ingesta de Contenido)
+# Transcripciones de YouTube
 yt-dlp>=2024.5.19
-youtube-transcript-api>=0.6.2  # Transcripciones de guías
+youtube-transcript-api>=0.6.2
 
 # GUI / Overlay
-PyQt6>=6.7.0                   # Framework para la interfaz y el overlay
-
-# Build, Packaging & Tooling
-pyinstaller>=6.5.0             # Empaquetado a ejecutable (.exe)
-pytest>=8.2.0
-pytest-asyncio>=0.23.6
+PyQt6>=6.7.0
