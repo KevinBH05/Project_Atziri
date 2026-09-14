@@ -11,23 +11,25 @@ pyperclip>=1.8.2               # Manejo del portapapeles de Windows (Ctrl+C)
 curl_cffi>=0.7.0               # Peticiones HTTP seguras e impersonadas
 
 # RAG & Vector Store
-chromadb>=0.5.0              # Base de datos vectorial persistente local
+chromadb>=0.5.0                # Base de datos vectorial persistente local
 
 # LLM & Integraciones de API
-google-genai>=0.1.0          # SDK de Google Gemini
-openai>=1.30.0               # Modelos compatibles con OpenAI / Ollama local
+google-genai>=0.1.0            # SDK de Google Gemini
+openai>=1.30.0                 # Modelos compatibles con OpenAI / Ollama local
 
-# Integration & Parsing (PoB & Extensible Ingestors)
+# Integration, Parsing & Text Processing
 beautifulsoup4>=4.12.3
 lxml>=5.2.0
+markdown>=3.6.0                # Renderizado de Markdown a HTML en la interfaz (QTextBrowser)
 
 # Herramientas y Transcripciones (Ingesta de Contenido)
 yt-dlp>=2024.5.19
 youtube-transcript-api>=0.6.2  # Transcripciones de guías
 
 # GUI / Overlay
-PyQt6>=6.7.0                 # Framework exclusivo para el overlay transparente
+PyQt6>=6.7.0                   # Framework para la interfaz y el overlay
 
-# Testing, Quality & Tooling
+# Build, Packaging & Tooling
+pyinstaller>=6.5.0             # Empaquetado a ejecutable (.exe)
 pytest>=8.2.0
 pytest-asyncio>=0.23.6
